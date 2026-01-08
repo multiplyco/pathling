@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.8 - 2025-01-08
+
+- Remove leftover ClojureScript dependency.
+
 ## 0.1.7 - 2025-01-02
 
 Initial release.

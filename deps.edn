@@ -1,11 +1,9 @@
 {:paths ["src" "target/classes"]
 
- :deps {org.clojure/clojurescript {:mvn/version "1.12.134"}}
-
  :aliases
  {:dev         {:extra-paths ["dev"]
-                :extra-deps  {nrepl/nrepl               {:mvn/version "1.5.1"}
-                              criterium/criterium       {:mvn/version "0.4.6"}}
+                :extra-deps  {nrepl/nrepl         {:mvn/version "1.5.1"}
+                              criterium/criterium {:mvn/version "0.4.6"}}
                 :jvm-opts    ["-Xmx8g"
                               "-Xss8m"
                               "-XX:+UnlockExperimentalVMOptions"
