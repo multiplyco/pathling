@@ -1,6 +1,7 @@
 *.class
 *.iml
 *.jar
+.clj-kondo
 .cpcache/
 .idea/
 .lein-deps-sum

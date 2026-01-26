@@ -1,14 +1,16 @@
 (ns co.multiply.pathling
   "Path finding and updating for nested data structures."
   (:require
-    [co.multiply.pathling.util :refer [acc-size accumulator accumulator->vec]]
+    [co.multiply.pathling.accumulator :refer [accumulator accumulator->vec]]
     #?(:cljs [co.multiply.pathling.impl :as impl]))
   #?(:clj (:import [co.multiply.pathling
                     Nav Nav$Updatable
+                    Replacer FunctionReplacer ListReplacer
                     ScannerMatches ScannerMatchesXf
                     ScannerMatchesKeys ScannerMatchesKeysXf
                     ScannerMatchesNav ScannerMatchesNavKeys
-                    Transform TransformKeys])))
+                    Transform TransformKeys]
+                   [java.util List])))
 
 
 ;; ## REMOVE sentinel
@@ -38,33 +40,66 @@
 ;; # Transformations
 ;; ################################################################################
 (defn update-paths
-  "Apply function `f` to all locations identified in `nav` within data structure.
+  "Apply replacements to all locations identified in `nav` within data structure.
    Updates are applied depth-first (children before parents).
 
-   If `f` returns `REMOVE`, the element is removed from its parent collection:
+   The third argument can be either:
+
+   - A function: called with each matched value, returns the replacement
+   - A collection (ArrayList/JS array, or vector): values are used sequentially by position
+
+   The collection-based form enables efficient bulk updates where replacements are
+   computed externally and must be applied in traversal order. This is useful
+   when the same accumulator returned by `path-when` with `:raw-matches true`
+   has been mutated in-place with replacement values.
+
+   If the replacement is `REMOVE`, the element is removed from its parent collection:
 
    - Maps: key-value pair is dissoc'd
    - Sets: element is not added to result
    - Vectors/Lists: element is removed and indices collapse
 
-   Example:
+   Example with function:
 
    ```clojure
    (let [{:keys [nav]} (path-when data number?)]
      (update-paths data nav inc))
    ```
 
-   For map-based replacement:
+   Example with accumulator (zero-allocation pattern):
 
    ```clojure
-   (let [{:keys [matches nav]} (path-when data pred)
-         replacements (zipmap matches (map transform matches))]
-     (update-paths data nav #(get replacements % %)))
+   (let [{:keys [matches nav]} (path-when data task? {:raw-matches true})]
+     ;; mutate matches in-place with results
+     (dotimes [i (acc-size matches)]
+       (acc-set! matches i (process (acc-get matches i))))
+     (update-paths data nav matches))
    ```"
-  [data nav f]
+  [data nav f-or-replacements]
   (if nav
-    #?(:clj  (.applyUpdates ^Nav$Updatable nav data f)
-       :cljs (impl/apply-updates nav data f))
+    #?(:clj  (let [replacer (cond
+                              (instance? Replacer f-or-replacements)
+                              f-or-replacements
+
+                              (instance? List f-or-replacements)
+                              (ListReplacer. f-or-replacements)
+
+                              :else
+                              (FunctionReplacer. f-or-replacements))]
+               (.applyUpdates ^Nav$Updatable nav data replacer))
+       :cljs (let [replacer (cond
+                              (satisfies? impl/IReplacer f-or-replacements)
+                              f-or-replacements
+
+                              (array? f-or-replacements)
+                              (impl/ArrayReplacer. f-or-replacements 0)
+
+                              (vector? f-or-replacements)
+                              (impl/VectorReplacer. f-or-replacements 0)
+
+                              :else
+                              (impl/FunctionReplacer. f-or-replacements))]
+               (impl/apply-updates nav data replacer)))
     data))
 
 
@@ -73,7 +108,7 @@
 
    Returns map with:
 
-   - `:matches` - Vector of matching values in depth-first order
+   - `:matches` - Vector of matching values in depth-first order (or ArrayList if `:raw-matches true`)
    - `:nav` - Navigation structure for updating matches (use with `update-paths`)
 
    Returns `nil` if no matches found.
@@ -81,6 +116,9 @@
    Options:
 
    - `:include-keys` - When true, also match map keys (default: false)
+   - `:raw-matches` - When true, return matches as mutable ArrayList instead of vector.
+                      Enables zero-allocation update pattern: mutate the ArrayList in-place
+                      with replacement values, then pass it directly to `update-paths`.
 
    Examples:
 
@@ -90,6 +128,12 @@
 
    (path-when [:a :b :c] number?)
    ;=> nil
+
+   ;; Zero-allocation pattern
+   (let [{:keys [matches nav]} (path-when data task? {:raw-matches true})]
+     (dotimes [i (.size matches)]
+       (.set matches i (process (.get matches i))))
+     (update-paths data nav matches))
    ```"
   ([data pred]
    (path-when data pred nil))
@@ -99,7 +143,9 @@
                                (ScannerMatchesNavKeys/pathWhen data matches pred)
                                (ScannerMatchesNav/pathWhen data matches pred))
                         :cljs (impl/path-when data matches pred opts))]
-       {:matches (accumulator->vec matches)
+       {:matches (if (:raw-matches opts)
+                   matches
+                   (accumulator->vec matches))
         :nav     nav}))))
 
 
@@ -176,5 +222,5 @@
               (Transform/transformWhen data pred tf))
       :cljs (let [nav (impl/path-when data (accumulator) pred opts)]
               (if nav
-                (impl/apply-updates nav data tf)
+                (impl/apply-updates nav data (impl/FunctionReplacer. tf))
                 data)))))

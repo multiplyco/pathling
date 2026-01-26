@@ -20,7 +20,7 @@ Find and transform values in nested data structures.
 
 ```clojure
 ;; deps.edn
-co.multiply/pathling {:mvn/version "0.1.8"}
+co.multiply/pathling {:mvn/version "0.2.0"}
 ```
 
 ## Why Pathling?
@@ -57,12 +57,13 @@ back.
 ;    {:type :task, :name "Review PR"}]
 
 ;; Label them "1 of 3", "2 of 3", etc.
-(let [n      (count (:matches result))
-      labels (into {} (map-indexed (fn [i task]
-                                     [task (str (inc i) " of " n)])
-                        (:matches result)))]
-  (p/update-paths data (:nav result)
-    #(assoc % :label (labels %))))
+(let [{:keys [matches nav]} result
+      n            (count matches)
+      replacements (into [] (map-indexed
+                              (fn [i task]
+                                (assoc task :label (str (inc i) " of " n))))
+                     matches)]
+  (p/update-paths data nav replacements))
 ;=> {:items [{:type :task, :name "Write docs", :label "1 of 3"}
 ;            {:type :note, :name "Remember milk"}
 ;            {:type :task, :name "Fix bug", :label "2 of 3"}]
@@ -129,16 +130,28 @@ Find all values matching a predicate, returning both matches and a navigation st
 Options:
 
 - `:include-keys` - When true, also match map keys (default: false)
+- `:raw-matches` - When true, return the internal mutable accumulator instead of a vector (default: false)
 
 ### `update-paths`
 
-Apply a function to all locations identified by a navigation structure.
+Apply replacements to all locations identified by a navigation structure.
+
+The third argument can be either a function or a collection of replacement values:
 
 ```clojure
+;; With a function
 (let [{:keys [nav]} (p/path-when data number?)]
   (p/update-paths data nav inc))
 ;=> [2 {:a 3} {:b #{4 {:c 5}}}]
+
+;; With a collection of replacements (applied in traversal order)
+(let [{:keys [matches nav]} (p/path-when data number?)]
+  (p/update-paths data nav (mapv #(* 10 %) matches)))
+;=> [10 {:a 20} {:b #{30 {:c 40}}}]
 ```
+
+When using a collection, values are consumed sequentially in the same depth-first order that `path-when` found them.
+This enables patterns where you transform matches externally and pass the results back.
 
 ### `find-when`
 
@@ -222,6 +235,26 @@ Behavior by collection type:
 - **Maps**: key-value pair is dissoc'd
 - **Sets**: element is not added to result
 - **Vectors/Lists**: element is removed and indices collapse
+
+## Zero-Allocation Update Pattern
+
+For performance-critical code, the `:raw-matches` option returns the internal mutable accumulator (`ArrayList` on JVM,
+JS array on ClojureScript) instead of converting to a vector. You can mutate this accumulator in-place with replacement
+values and pass it directly to `update-paths`:
+
+```clojure
+(require '[co.multiply.pathling.accumulator :refer [acc-get acc-set! acc-size]])
+
+(let [{:keys [matches nav]} (p/path-when data number? {:raw-matches true})]
+  ;; Mutate the accumulator in-place
+  (dotimes [i (acc-size matches)]
+    (acc-set! matches i (* 10 (acc-get matches i))))
+  ;; Pass the same accumulator to update-paths
+  (p/update-paths data nav matches))
+```
+
+This eliminates the intermediate vector allocation and is useful when processing large numbers of matches. The
+accumulator macros (`acc-get`, `acc-set!`, `acc-size`) work cross-platform.
 
 ## Metadata Preservation
 

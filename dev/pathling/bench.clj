@@ -286,6 +286,24 @@
         (let [{:keys [matches nav]} (p/path-when data number?)]
           (p/update-paths data nav inc)))))
 
+
+  (let [data (mapv (fn [n] {:n n}) (range 10000))]
+    (println "`data`: (mapv (fn [n] {:n n}) (range 10000))")
+    (println "Vector of 10000 maps; all of them matches.")
+    (do
+      (println "Scan -----------------------")
+      (crit/quick-bench (p/path-when data number?)))
+    (let [{:keys [matches nav]} (p/path-when data number?)
+          replacements (mapv inc matches)]
+      (println "Update -----------------------")
+      (crit/quick-bench (p/update-paths data nav replacements)))
+    (do
+      (println "Scan + Update -----------------------")
+      (crit/quick-bench
+        (let [{:keys [matches nav]} (p/path-when data number?)
+              replacements (mapv inc matches)]
+          (p/update-paths data nav replacements)))))
+
   (let [data (mapv (fn [n] {:n n}) (range 10000))]
     (crit/bench (p/transform-when data number? inc)))
 

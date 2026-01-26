@@ -1,5 +1,8 @@
 {:paths ["src" "target/classes"]
 
+ :deps  {#_#_org.clojure/clojure       {:mvn/version "1.12.4"}
+         #_#_org.clojure/clojurescript {:mvn/version "1.12.134"}}
+
  :aliases
  {:dev         {:extra-paths ["dev"]
                 :extra-deps  {nrepl/nrepl         {:mvn/version "1.5.1"}

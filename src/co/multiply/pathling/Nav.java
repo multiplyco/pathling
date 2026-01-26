@@ -3,7 +3,6 @@ package co.multiply.pathling;
 import clojure.lang.*;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Navigation structures for Pathling.
@@ -36,13 +35,13 @@ public final class Nav {
         permits MapEditable, MapPersistent, MapStruct, VecEdit, VecPersistent,
                 SeqNav, SetEdit, SetPersistent, Scalar {
         /**
-         * Apply function f to all locations identified by this navigation.
+         * Apply replacer to all locations identified by this navigation.
          *
          * @param data the data structure to update
-         * @param f the transform function
+         * @param r the replacer strategy
          * @return the updated data structure
          */
-        Object applyUpdates(Object data, IFn f);
+        Object applyUpdates(Object data, Replacer r);
     }
 
     // ========================================================================
@@ -72,7 +71,7 @@ public final class Nav {
      */
     public record MapEditable(ArrayList<KeyNav> children, boolean terminal, boolean hasKeyTransforms) implements Updatable {
         @Override
-        public Object applyUpdates(Object data, IFn f) {
+        public Object applyUpdates(Object data, Replacer r) {
             IPersistentMap m = (IPersistentMap) data;
             Object updated;
             if (children != null) {
@@ -92,20 +91,20 @@ public final class Nav {
                     for (int i = 0; i < n; i++) {
                         switch (children.get(i)) {
                             case Val v -> {
-                                Object value = v.child().applyUpdates(RT.get(m, v.key()), f);
+                                Object value = v.child().applyUpdates(RT.get(m, v.key()), r);
                                 if (value != REMOVE) {
                                     tm = tm.assoc(v.key(), value);
                                 }
                             }
                             case Key k -> {
-                                Object newK = f.invoke(k.key());
+                                Object newK = r.replace(k.key());
                                 if (newK != REMOVE) {
                                     tm = tm.assoc(newK, RT.get(m, k.key()));
                                 }
                             }
                             case KeyVal kv -> {
-                                Object newK = f.invoke(kv.key());
-                                Object value = kv.child().applyUpdates(RT.get(m, kv.key()), f);
+                                Object newK = r.replace(kv.key());
+                                Object value = kv.child().applyUpdates(RT.get(m, kv.key()), r);
                                 if (newK != REMOVE && value != REMOVE) {
                                     tm = tm.assoc(newK, value);
                                 }
@@ -116,7 +115,7 @@ public final class Nav {
                     // Single-pass: all children are Val, keys don't change
                     for (int i = 0; i < n; i++) {
                         Val v = (Val) children.get(i);
-                        Object value = v.child().applyUpdates(RT.get(m, v.key()), f);
+                        Object value = v.child().applyUpdates(RT.get(m, v.key()), r);
                         if (value != REMOVE) {
                             tm = tm.assoc(v.key(), value);
                         } else {
@@ -128,7 +127,7 @@ public final class Nav {
             } else {
                 updated = m;
             }
-            return terminal ? f.invoke(updated) : updated;
+            return terminal ? r.replace(updated) : updated;
         }
     }
 
@@ -139,7 +138,7 @@ public final class Nav {
      */
     public record MapPersistent(ArrayList<KeyNav> children, boolean terminal, boolean hasKeyTransforms) implements Updatable {
         @Override
-        public Object applyUpdates(Object data, IFn f) {
+        public Object applyUpdates(Object data, Replacer r) {
             IPersistentMap m = (IPersistentMap) data;
             Object updated;
             if (children != null) {
@@ -159,20 +158,20 @@ public final class Nav {
                     for (int i = 0; i < n; i++) {
                         switch (children.get(i)) {
                             case Val v -> {
-                                Object value = v.child().applyUpdates(RT.get(m, v.key()), f);
+                                Object value = v.child().applyUpdates(RT.get(m, v.key()), r);
                                 if (value != REMOVE) {
                                     result = result.assoc(v.key(), value);
                                 }
                             }
                             case Key k -> {
-                                Object newK = f.invoke(k.key());
+                                Object newK = r.replace(k.key());
                                 if (newK != REMOVE) {
                                     result = result.assoc(newK, RT.get(m, k.key()));
                                 }
                             }
                             case KeyVal kv -> {
-                                Object newK = f.invoke(kv.key());
-                                Object value = kv.child().applyUpdates(RT.get(m, kv.key()), f);
+                                Object newK = r.replace(kv.key());
+                                Object value = kv.child().applyUpdates(RT.get(m, kv.key()), r);
                                 if (newK != REMOVE && value != REMOVE) {
                                     result = result.assoc(newK, value);
                                 }
@@ -183,7 +182,7 @@ public final class Nav {
                     // Single-pass: all children are Val, keys don't change
                     for (int i = 0; i < n; i++) {
                         Val v = (Val) children.get(i);
-                        Object value = v.child().applyUpdates(RT.get(m, v.key()), f);
+                        Object value = v.child().applyUpdates(RT.get(m, v.key()), r);
                         if (value != REMOVE) {
                             result = result.assoc(v.key(), value);
                         } else {
@@ -196,7 +195,7 @@ public final class Nav {
             } else {
                 updated = m;
             }
-            return terminal ? f.invoke(updated) : updated;
+            return terminal ? r.replace(updated) : updated;
         }
     }
 
@@ -206,7 +205,7 @@ public final class Nav {
      */
     public record MapStruct(ArrayList<Val> children, boolean terminal) implements Updatable {
         @Override
-        public Object applyUpdates(Object data, IFn f) {
+        public Object applyUpdates(Object data, Replacer r) {
             IPersistentMap m = (IPersistentMap) data;
             Object updated;
             if (children != null) {
@@ -214,7 +213,7 @@ public final class Nav {
                 int n = children.size();
                 for (int i = 0; i < n; i++) {
                     Val v = children.get(i);
-                    Object value = v.child().applyUpdates(RT.get(m, v.key()), f);
+                    Object value = v.child().applyUpdates(RT.get(m, v.key()), r);
                     // Struct maps don't support dissoc, so REMOVE becomes assoc nil
                     result = result.assoc(v.key(), value == REMOVE ? null : value);
                 }
@@ -222,7 +221,7 @@ public final class Nav {
             } else {
                 updated = m;
             }
-            return terminal ? f.invoke(updated) : updated;
+            return terminal ? r.replace(updated) : updated;
         }
     }
 
@@ -231,7 +230,7 @@ public final class Nav {
      */
     public record VecEdit(ArrayList<Pos> children, boolean terminal) implements Updatable {
         @Override
-        public Object applyUpdates(Object data, IFn f) {
+        public Object applyUpdates(Object data, Replacer r) {
             IPersistentVector v = (IPersistentVector) data;
             Object updated;
             if (children != null) {
@@ -240,7 +239,7 @@ public final class Nav {
                 int n = children.size();
                 for (int i = 0; i < n; i++) {
                     Pos p = children.get(i);
-                    Object result = p.child().applyUpdates(v.nth(p.index()), f);
+                    Object result = p.child().applyUpdates(v.nth(p.index()), r);
                     if (result == REMOVE) {
                         if (removals == null) removals = new ArrayList<>();
                         removals.add(p.index());
@@ -252,7 +251,7 @@ public final class Nav {
             } else {
                 updated = v;
             }
-            return terminal ? f.invoke(updated) : updated;
+            return terminal ? r.replace(updated) : updated;
         }
     }
 
@@ -262,7 +261,7 @@ public final class Nav {
      */
     public record VecPersistent(ArrayList<Pos> children, boolean terminal) implements Updatable {
         @Override
-        public Object applyUpdates(Object data, IFn f) {
+        public Object applyUpdates(Object data, Replacer r) {
             IPersistentVector v = (IPersistentVector) data;
             Object updated;
             if (children != null) {
@@ -281,7 +280,7 @@ public final class Nav {
                     }
 
                     // Process this child
-                    Object value = p.child().applyUpdates(v.nth(idx), f);
+                    Object value = p.child().applyUpdates(v.nth(idx), r);
                     if (value != REMOVE) {
                         list.add(value);
                     }
@@ -299,7 +298,7 @@ public final class Nav {
             } else {
                 updated = v;
             }
-            return terminal ? f.invoke(updated) : updated;
+            return terminal ? r.replace(updated) : updated;
         }
     }
 
@@ -309,7 +308,7 @@ public final class Nav {
      */
     public record SeqNav(ArrayList<Pos> children, boolean terminal, int length) implements Updatable {
         @Override
-        public Object applyUpdates(Object data, IFn f) {
+        public Object applyUpdates(Object data, Replacer r) {
             // Materialize to ArrayList for O(1) indexed access
             ArrayList<Object> list;
             if (data instanceof Collection<?> coll) {
@@ -329,7 +328,7 @@ public final class Nav {
 
                 for (int i = 0; i < n; i++) {
                     Pos p = children.get(i);
-                    Object result = p.child().applyUpdates(list.get(p.index()), f);
+                    Object result = p.child().applyUpdates(list.get(p.index()), r);
                     if (result == REMOVE) {
                         if (removals == null) removals = new ArrayList<>();
                         removals.add(p.index());
@@ -363,7 +362,7 @@ public final class Nav {
             } else {
                 updated = data;
             }
-            return terminal ? f.invoke(updated) : updated;
+            return terminal ? r.replace(updated) : updated;
         }
     }
 
@@ -372,7 +371,7 @@ public final class Nav {
      */
     public record SetEdit(ArrayList<Mem> children, boolean terminal) implements Updatable {
         @Override
-        public Object applyUpdates(Object data, IFn f) {
+        public Object applyUpdates(Object data, Replacer r) {
             IPersistentSet set = (IPersistentSet) data;
             Object updated;
             if (children != null) {
@@ -385,7 +384,7 @@ public final class Nav {
                 // Then add back transformed values
                 for (int i = 0; i < n; i++) {
                     Mem m = children.get(i);
-                    Object result = m.child().applyUpdates(m.member(), f);
+                    Object result = m.child().applyUpdates(m.member(), r);
                     if (result != REMOVE) {
                         ts = (ITransientSet) ts.conj(result);
                     }
@@ -394,7 +393,7 @@ public final class Nav {
             } else {
                 updated = set;
             }
-            return terminal ? f.invoke(updated) : updated;
+            return terminal ? r.replace(updated) : updated;
         }
     }
 
@@ -403,7 +402,7 @@ public final class Nav {
      */
     public record SetPersistent(ArrayList<Mem> children, boolean terminal) implements Updatable {
         @Override
-        public Object applyUpdates(Object data, IFn f) {
+        public Object applyUpdates(Object data, Replacer r) {
             IPersistentSet set = (IPersistentSet) data;
             Object updated;
             if (children != null) {
@@ -416,7 +415,7 @@ public final class Nav {
                 // Then add back transformed values
                 for (int i = 0; i < n; i++) {
                     Mem m = children.get(i);
-                    Object value = m.child().applyUpdates(m.member(), f);
+                    Object value = m.child().applyUpdates(m.member(), r);
                     if (value != REMOVE) {
                         result = (IPersistentSet) result.cons(value);
                     }
@@ -426,7 +425,7 @@ public final class Nav {
             } else {
                 updated = set;
             }
-            return terminal ? f.invoke(updated) : updated;
+            return terminal ? r.replace(updated) : updated;
         }
     }
 
@@ -455,8 +454,8 @@ public final class Nav {
         public static final Scalar INSTANCE = new Scalar();
 
         @Override
-        public Object applyUpdates(Object data, IFn f) {
-            return f.invoke(data);
+        public Object applyUpdates(Object data, Replacer r) {
+            return r.replace(data);
         }
 
         @Override

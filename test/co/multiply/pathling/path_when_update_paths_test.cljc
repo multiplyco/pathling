@@ -1,8 +1,11 @@
 (ns co.multiply.pathling.path-when-update-paths-test
   "Tests for path-when and update-paths functionality."
   (:require
+    [clojure.string :as str]
     [clojure.test :refer [deftest is testing]]
-    [co.multiply.pathling :as p]))
+    [co.multiply.pathling :as p]
+    [co.multiply.pathling.accumulator :refer [acc-get acc-set! acc-size]])
+  #?(:clj (:import [java.util ArrayList])))
 
 
 ;; path-when / update-paths tests
@@ -349,3 +352,94 @@
       (let [result (p/update-paths data nav name)]
         (is (= 1000 (count result)))
         (is (every? string? (keys result)))))))
+
+
+;; raw-matches and list-based replacement tests
+;; #######################################
+
+(defn- accumulator?
+  "Check if x is an accumulator (ArrayList on CLJ, array on CLJS)."
+  [x]
+  #?(:clj  (instance? ArrayList x)
+     :cljs (array? x)))
+
+
+(deftest raw-matches-test
+  (testing ":raw-matches returns accumulator instead of vector"
+    (let [data   [1 {:a 2} {:b #{3 {:c 4}}}]
+          {:keys [matches nav]} (p/path-when data number? {:raw-matches true})]
+      (is (accumulator? matches))
+      (is (= [1 2 3 4] (vec matches)))
+      ;; Can still use with function-based update
+      (is (= [2 {:a 3} {:b #{4 {:c 5}}}]
+             (p/update-paths data nav inc)))))
+
+  (testing "List-based replacement with accumulator"
+    (let [data   [1 {:a 2} {:b #{3 {:c 4}}}]
+          {:keys [matches nav]} (p/path-when data number? {:raw-matches true})]
+      ;; Mutate accumulator in place with replacement values
+      (dotimes [i (acc-size matches)]
+        (acc-set! matches i (* 10 (acc-get matches i))))
+      ;; Pass the accumulator directly to update-paths
+      (is (= [10 {:a 20} {:b #{30 {:c 40}}}]
+             (p/update-paths data nav matches)))))
+
+  (testing "Zero-allocation pattern - same accumulator reused"
+    (let [data      {:x 1 :y 2 :z 3}
+          {:keys [matches nav]} (p/path-when data number? {:raw-matches true})
+          original  matches]                                ; Same object reference
+      ;; Mutate in place
+      (dotimes [i (acc-size matches)]
+        (acc-set! matches i (str "value-" (acc-get matches i))))
+      ;; Verify same accumulator instance
+      (is (identical? original matches))
+      ;; Use for replacement
+      (is (= {:x "value-1" :y "value-2" :z "value-3"}
+             (p/update-paths data nav matches)))))
+
+  (testing "List replacement with REMOVE"
+    (let [data   [1 2 3 4 5]
+          {:keys [matches nav]} (p/path-when data number? {:raw-matches true})]
+      ;; Replace evens with REMOVE
+      (dotimes [i (acc-size matches)]
+        (let [v (acc-get matches i)]
+          (acc-set! matches i (if (even? v) p/REMOVE (* 10 v)))))
+      (is (= [10 30 50]
+             (p/update-paths data nav matches)))))
+
+  (testing "List replacement preserves depth-first order"
+    (let [data   [{:a 1} {:b {:c 2}} 3]
+          {:keys [matches nav]} (p/path-when data number? {:raw-matches true})]
+      ;; Verify order is depth-first
+      (is (= [1 2 3] (vec matches)))
+      ;; Replace with labeled values
+      (dotimes [i (acc-size matches)]
+        (acc-set! matches i (keyword (str "pos-" i))))
+      (is (= [{:a :pos-0} {:b {:c :pos-1}} :pos-2]
+             (p/update-paths data nav matches)))))
+
+  (testing "Empty result with raw-matches"
+    (let [result (p/path-when [:a :b :c] number? {:raw-matches true})]
+      (is (nil? result))))
+
+  (testing "Combining raw-matches with include-keys"
+    (let [data   {:a 1 :b 2}
+          {:keys [matches nav]} (p/path-when data keyword? {:raw-matches true
+                                                            :include-keys true})]
+      (is (accumulator? matches))
+      (is (= 2 (acc-size matches)))
+      ;; Mutate and apply
+      (dotimes [i (acc-size matches)]
+        (acc-set! matches i (-> (acc-get matches i) name str/upper-case)))
+      (is (= {"A" 1 "B" 2}
+             (p/update-paths data nav matches)))))
+
+  (testing "Vector of replacements"
+    (let [data   [1 {:a 2} 3]
+          {:keys [matches nav]} (p/path-when data number?)
+          replacements (mapv #(* 10 %) matches)]
+      ;; matches is a vector (default behavior)
+      (is (vector? matches))
+      ;; Can pass a vector directly as replacements
+      (is (= [10 {:a 20} 30]
+             (p/update-paths data nav replacements))))))

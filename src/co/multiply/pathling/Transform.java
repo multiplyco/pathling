@@ -25,7 +25,7 @@ public final class Transform {
         if (nav == null) {
             return obj;
         }
-        return ((Nav.Updatable) nav).applyUpdates(obj, tf);
+        return ((Nav.Updatable) nav).applyUpdates(obj, new FunctionReplacer(tf));
     }
 
     // ========================================================================

@@ -1,5 +1,6 @@
 (ns co.multiply.pathling.impl
   (:require
+    [co.multiply.pathling.accumulator :as acc]
     [co.multiply.pathling.util :as util :refer [extend-protocol-many]]))
 
 
@@ -24,11 +25,39 @@
   ::remove)
 
 
+;; # IReplacer protocol
+;; ################################################################################
+(defprotocol IReplacer
+  "Protocol for computing replacement values during update-paths traversal."
+  (-replace [this v]))
+
+
+(deftype FunctionReplacer [f]
+  IReplacer
+  (-replace [_ v] (f v)))
+
+
+(deftype ArrayReplacer [arr ^:mutable idx]
+  IReplacer
+  (-replace [_ _]
+    (let [i idx]
+      (set! idx (inc i))
+      (aget arr i))))
+
+
+(deftype VectorReplacer [v ^:mutable idx]
+  IReplacer
+  (-replace [_ _]
+    (let [i idx]
+      (set! idx (inc i))
+      (nth v i))))
+
+
 ;; # IApplyUpdates protocol
 ;; ################################################################################
 (defprotocol IApplyUpdates
   "Protocol for applying updates through navigation structure"
-  (apply-updates [nav data f]))
+  (apply-updates [nav data r]))
 
 
 ;; # Shared utilities
@@ -53,16 +82,16 @@
   ([v indices cast metadata]
    (if indices
      (let [end          (count v)
-           indices      (util/acc-append! indices end)
-           n            (util/acc-size indices)
-           preallocated (util/accumulator (- end (dec n)))]
+           indices      (acc/acc-append! indices end)
+           n            (acc/acc-size indices)
+           preallocated (acc/accumulator (- end (dec n)))]
        (loop [i   (unchecked-int 1)
-              acc (util/acc-append-many! preallocated
-                    (subvec v 0 (util/acc-get indices 0)))]
+              acc (acc/acc-append-many! preallocated
+                    (subvec v 0 (acc/acc-get indices 0)))]
          (if (< i n)
-           (let [from (inc (util/acc-get indices (dec i)))
-                 to   (util/acc-get indices i)]
-             (recur (unchecked-inc-int i) (util/acc-append-many! acc (subvec v from to))))
+           (let [from (inc (acc/acc-get indices (dec i)))
+                 to   (acc/acc-get indices i)]
+             (recur (unchecked-inc-int i) (acc/acc-append-many! acc (subvec v from to))))
            (with-meta (cast acc) metadata))))
      (with-meta (cast v) metadata))))
 
@@ -113,14 +142,14 @@
       (let [nav    (path-when v matches pred opts)
             term-k (and include-keys (pred k))]
         (when term-k
-          (util/acc-append! matches k))
+          (acc/acc-append! matches k))
         (recur (next remaining) (or did-term-k term-k)
           (if (or nav term-k)
-            (util/acc-init-append! child-navs (NavKey. k nav term-k))
+            (acc/acc-init-append! child-navs (NavKey. k nav term-k))
             child-navs)))
       (let [pred-res (pred this)]
         (when pred-res
-          (util/acc-append! matches this))
+          (acc/acc-append! matches this))
         (cond
           did-term-k (NavMapPersistent. child-navs pred-res)
           child-navs (if (util/editable? this)
@@ -174,11 +203,11 @@
         (let [nav (path-when (nth this idx) matches pred opts)]
           (recur (inc idx)
             (if nav
-              (util/acc-init-append! child-navs (NavPos. idx nav))
+              (acc/acc-init-append! child-navs (NavPos. idx nav))
               child-navs)))
         (let [pred-res (pred this)]
           (when pred-res
-            (util/acc-append! matches this))
+            (acc/acc-append! matches this))
           (cond
             child-navs (if (util/editable? this)
                          (NavVecEdit. child-navs pred-res)
@@ -220,11 +249,11 @@
       (let [nav (path-when elem matches pred opts)]
         (recur (inc idx) more
           (if nav
-            (util/acc-init-append! child-navs (NavPos. idx nav))
+            (acc/acc-init-append! child-navs (NavPos. idx nav))
             child-navs)))
       (let [pred-res (pred this)]
         (when pred-res
-          (util/acc-append! matches this))
+          (acc/acc-append! matches this))
         (cond
           child-navs (NavList. child-navs pred-res)
           pred-res (NavList. nil pred-res)
@@ -258,11 +287,11 @@
       (let [nav (path-when elem matches pred opts)]
         (recur more
           (if nav
-            (util/acc-init-append! child-navs (NavMem. elem nav))
+            (acc/acc-init-append! child-navs (NavMem. elem nav))
             child-navs)))
       (let [pred-res (pred this)]
         (when pred-res
-          (util/acc-append! matches this))
+          (acc/acc-append! matches this))
         (cond
           child-navs (if (util/editable? this)
                        (NavSetEdit. child-navs pred-res)
@@ -297,7 +326,7 @@
 (defn- path-scalar
   [this matches pred _opts]
   (when (pred this)
-    (util/acc-append! matches this)
+    (acc/acc-append! matches this)
     (NavScalar.)))
 
 
@@ -321,72 +350,72 @@
 ;; ========================================================================
 (defn- strip-nav-keys-from-map
   [m nav-keys]
-  (let [n (util/acc-size nav-keys)]
+  (let [n (acc/acc-size nav-keys)]
     (loop [i 0, m m]
       (if (< i n)
-        (let [^NavKey nav-key (util/acc-get nav-keys i)]
+        (let [^NavKey nav-key (acc/acc-get nav-keys i)]
           (recur (inc i) (dissoc m (.-arg nav-key))))
         m))))
 
 
 (defn- strip-nav-mems-from-set!
   [s nav-mems]
-  (let [n (util/acc-size nav-mems)]
+  (let [n (acc/acc-size nav-mems)]
     (loop [i 0, s s]
       (if (< i n)
-        (let [^NavMem nav-mem (util/acc-get nav-mems i)]
+        (let [^NavMem nav-mem (acc/acc-get nav-mems i)]
           (recur (inc i) (disj! s (.-arg nav-mem))))
         s))))
 
 
 (defn- strip-nav-mems-from-set
   [s nav-mems]
-  (let [n (util/acc-size nav-mems)]
+  (let [n (acc/acc-size nav-mems)]
     (loop [i 0, s s]
       (if (< i n)
-        (let [^NavMem nav-mem (util/acc-get nav-mems i)]
+        (let [^NavMem nav-mem (acc/acc-get nav-mems i)]
           (recur (inc i) (disj s (.-arg nav-mem))))
         s))))
 
 
 (extend-type NavMapEdit
   IApplyUpdates
-  (apply-updates [this data f]
+  (apply-updates [this data r]
     (let [children (.-children this)
           term     (.-term this)
           updated  (if children
                      (util/with-transient [m data]
-                       (let [n (util/acc-size children)]
+                       (let [n (acc/acc-size children)]
                          (loop [i 0, m m]
                            (if (< i n)
-                             (let [^NavKey nav-key (util/acc-get children i)
+                             (let [^NavKey nav-key (acc/acc-get children i)
                                    k               (.-arg nav-key)
                                    child-nav       (.-children nav-key)
-                                   result          (apply-updates child-nav (get data k) f)]
+                                   result          (apply-updates child-nav (get data k) r)]
                                (recur (inc i)
                                  (if (identical? result REMOVE)
                                    (dissoc! m k)
                                    (assoc! m k result))))
                              m))))
                      data)]
-      (if term (f updated) updated))))
+      (if term (-replace r updated) updated))))
 
 
 (extend-type NavMapPersistent
   IApplyUpdates
-  (apply-updates [this data f]
+  (apply-updates [this data r]
     (let [children (.-children this)
           term     (.-term this)
           updated  (if children
-                     (let [n (util/acc-size children)]
+                     (let [n (acc/acc-size children)]
                        (loop [i 0, m (strip-nav-keys-from-map data children)]
                          (if (< i n)
-                           (let [^NavKey nav-key (util/acc-get children i)
+                           (let [^NavKey nav-key (acc/acc-get children i)
                                  old-k           (.-arg nav-key)
-                                 new-k           (if (.-term nav-key) (f old-k) old-k)
+                                 new-k           (if (.-term nav-key) (-replace r old-k) old-k)
                                  child-nav       (.-children nav-key)
                                  result          (if child-nav
-                                                   (apply-updates child-nav (get data old-k) f)
+                                                   (apply-updates child-nav (get data old-k) r)
                                                    (get data old-k))]
                              (recur (inc i)
                                (if (or (identical? new-k REMOVE) (identical? result REMOVE))
@@ -394,142 +423,142 @@
                                  (assoc m new-k result))))
                            m)))
                      data)]
-      (if term (f updated) updated))))
+      (if term (-replace r updated) updated))))
 
 
 (extend-type NavMapStruct
   IApplyUpdates
-  (apply-updates [this data f]
+  (apply-updates [this data r]
     (let [children (.-children this)
           term     (.-term this)
           updated  (if children
-                     (let [n (util/acc-size children)]
+                     (let [n (acc/acc-size children)]
                        (loop [i 0, m data]
                          (if (< i n)
-                           (let [^NavKey nav-key (util/acc-get children i)
+                           (let [^NavKey nav-key (acc/acc-get children i)
                                  k               (.-arg nav-key)
                                  child-nav       (.-children nav-key)
-                                 result          (apply-updates child-nav (get data k) f)]
+                                 result          (apply-updates child-nav (get data k) r)]
                              (recur (inc i)
                                (if (identical? result REMOVE)
                                  (dissoc m k)
                                  (assoc m k result))))
                            m)))
                      data)]
-      (if term (f updated) updated))))
+      (if term (-replace r updated) updated))))
 
 
 (extend-type NavVecEdit
   IApplyUpdates
-  (apply-updates [this data f]
+  (apply-updates [this data r]
     (let [children (.-children this)
           term     (.-term this)
           updated  (if children
-                     (let [n (util/acc-size children)]
+                     (let [n (acc/acc-size children)]
                        (loop [i 0, v (transient data), removals nil]
                          (if (< i n)
-                           (let [^NavPos nav-pos (util/acc-get children i)
+                           (let [^NavPos nav-pos (acc/acc-get children i)
                                  idx             (.-arg nav-pos)
                                  child-nav       (.-children nav-pos)
-                                 result          (apply-updates child-nav (get data idx) f)]
+                                 result          (apply-updates child-nav (get data idx) r)]
                              (if (identical? result REMOVE)
-                               (recur (inc i) v (util/acc-init-append! removals idx))
+                               (recur (inc i) v (acc/acc-init-append! removals idx))
                                (recur (inc i) (assoc! v idx result) removals)))
-                           (vec-remove-indices* (persistent! v) removals util/accumulator->vec (meta data)))))
+                           (vec-remove-indices* (persistent! v) removals acc/accumulator->vec (meta data)))))
                      data)]
-      (if term (f updated) updated))))
+      (if term (-replace r updated) updated))))
 
 
 (extend-type NavVecPersistent
   IApplyUpdates
-  (apply-updates [this data f]
+  (apply-updates [this data r]
     (let [children (.-children this)
           term     (.-term this)
           updated  (if children
-                     (let [n (util/acc-size children)]
+                     (let [n (acc/acc-size children)]
                        (loop [i 0, v data, removals nil]
                          (if (< i n)
-                           (let [^NavPos nav-pos (util/acc-get children i)
+                           (let [^NavPos nav-pos (acc/acc-get children i)
                                  idx             (.-arg nav-pos)
                                  child-nav       (.-children nav-pos)
-                                 result          (apply-updates child-nav (get v idx) f)]
+                                 result          (apply-updates child-nav (get v idx) r)]
                              (if (identical? result REMOVE)
-                               (recur (inc i) v (util/acc-init-append! removals idx))
+                               (recur (inc i) v (acc/acc-init-append! removals idx))
                                (recur (inc i) (assoc v idx result) removals)))
-                           (vec-remove-indices* v removals util/accumulator->vec (meta data)))))
+                           (vec-remove-indices* v removals acc/accumulator->vec (meta data)))))
                      data)]
-      (if term (f updated) updated))))
+      (if term (-replace r updated) updated))))
 
 
 (extend-type NavList
   IApplyUpdates
-  (apply-updates [this data f]
+  (apply-updates [this data r]
     (let [children (.-children this)
           term     (.-term this)
           updated  (if children
                      (let [data-vec (vec data)
-                           n        (util/acc-size children)
+                           n        (acc/acc-size children)
                            [v removals]
                            (loop [i 0, v (transient data-vec), removals nil]
                              (if (< i n)
-                               (let [^NavPos nav-pos (util/acc-get children i)
+                               (let [^NavPos nav-pos (acc/acc-get children i)
                                      idx             (.-arg nav-pos)
                                      child-nav       (.-children nav-pos)
-                                     result          (apply-updates child-nav (get data-vec idx) f)]
+                                     result          (apply-updates child-nav (get data-vec idx) r)]
                                  (if (identical? result REMOVE)
-                                   (recur (inc i) v (util/acc-init-append! removals idx))
+                                   (recur (inc i) v (acc/acc-init-append! removals idx))
                                    (recur (inc i) (assoc! v idx result) removals)))
                                [(persistent! v) removals]))]
-                       (vec-remove-indices* v removals util/accumulator->list (meta data)))
+                       (vec-remove-indices* v removals acc/accumulator->list (meta data)))
                      data)]
-      (if term (f updated) updated))))
+      (if term (-replace r updated) updated))))
 
 
 (extend-type NavSetEdit
   IApplyUpdates
-  (apply-updates [this data f]
+  (apply-updates [this data r]
     (let [children (.-children this)
           term     (.-term this)
           updated  (if children
                      (util/with-transient [s data]
-                       (let [n (util/acc-size children)]
+                       (let [n (acc/acc-size children)]
                          (loop [i 0, s (strip-nav-mems-from-set! s children)]
                            (if (< i n)
-                             (let [^NavMem nav-mem (util/acc-get children i)
-                                   result          (apply-updates (.-children nav-mem) (.-arg nav-mem) f)]
+                             (let [^NavMem nav-mem (acc/acc-get children i)
+                                   result          (apply-updates (.-children nav-mem) (.-arg nav-mem) r)]
                                (recur (inc i)
                                  (if (identical? result REMOVE)
                                    s
                                    (conj! s result))))
                              s))))
                      data)]
-      (if term (f updated) updated))))
+      (if term (-replace r updated) updated))))
 
 
 (extend-type NavSetPersistent
   IApplyUpdates
-  (apply-updates [this data f]
+  (apply-updates [this data r]
     (let [children (.-children this)
           term     (.-term this)
           updated  (if children
-                     (let [n (util/acc-size children)]
+                     (let [n (acc/acc-size children)]
                        (loop [i 0, s (strip-nav-mems-from-set data children)]
                          (if (< i n)
-                           (let [^NavMem nav-mem (util/acc-get children i)
-                                 result          (apply-updates (.-children nav-mem) (.-arg nav-mem) f)]
+                           (let [^NavMem nav-mem (acc/acc-get children i)
+                                 result          (apply-updates (.-children nav-mem) (.-arg nav-mem) r)]
                              (recur (inc i)
                                (if (identical? result REMOVE)
                                  s
                                  (conj s result))))
                            s)))
                      data)]
-      (if term (f updated) updated))))
+      (if term (-replace r updated) updated))))
 
 
 (extend-type NavScalar
   IApplyUpdates
-  (apply-updates [_ data f]
-    (f data)))
+  (apply-updates [_ data r]
+    (-replace r data)))
 
 
 ;; ## Public API for find-when
@@ -544,13 +573,13 @@
   ([data pred xf-or-opts]
    (let [opts      (if (map? xf-or-opts) xf-or-opts {:xf xf-or-opts})
          xf        (:xf opts)
-         matches   (util/accumulator)
+         matches   (acc/accumulator)
          step-fn   (fn step
                      ([acc] acc)
-                     ([acc x] (util/acc-append! acc x)))
+                     ([acc x] (acc/acc-append! acc x)))
          rf        (if xf (xf step-fn) step-fn)
          add-match (fn [x] (rf matches x))]
      (scan-when data add-match pred opts)
      (rf matches)
-     (when-not (zero? (util/acc-size matches))
-       (util/accumulator->vec matches)))))
+     (when-not (zero? (acc/acc-size matches))
+       (acc/accumulator->vec matches)))))
