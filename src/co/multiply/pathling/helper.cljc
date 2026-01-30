@@ -1,6 +1,6 @@
 (ns co.multiply.pathling.helper
   "Internal utilities for Pathling. Not part of the public API."
-  #?(:cljs (:require-macros co.multiply.pathling.util))
+  #?(:cljs (:require-macros co.multiply.pathling.helper))
   #?(:clj (:import [clojure.lang IEditableCollection])))
 
 

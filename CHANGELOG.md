@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 - 2025-01-30
+
+### Fixed
+
+- Fix ClojureScript build failure due to stale reference to renamed `util` namespace.
+
 ## 0.2.0 - 2025-01-30
 
 ### Added

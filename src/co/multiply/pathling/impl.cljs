@@ -1,7 +1,7 @@
 (ns co.multiply.pathling.impl
   (:require
     [co.multiply.pathling.accumulator :as acc]
-    [co.multiply.pathling.util :as util :refer [extend-protocol-many]]))
+    [co.multiply.pathling.helper :as helper :refer [extend-protocol-many]]))
 
 
 ;; # REMOVE sentinel
@@ -152,7 +152,7 @@
           (acc/acc-append! matches this))
         (cond
           did-term-k (NavMapPersistent. child-navs pred-res)
-          child-navs (if (util/editable? this)
+          child-navs (if (helper/editable? this)
                        (NavMapEdit. child-navs pred-res)
                        (NavMapPersistent. child-navs pred-res))
           pred-res (NavMapEdit. nil pred-res)
@@ -209,7 +209,7 @@
           (when pred-res
             (acc/acc-append! matches this))
           (cond
-            child-navs (if (util/editable? this)
+            child-navs (if (helper/editable? this)
                          (NavVecEdit. child-navs pred-res)
                          (NavVecPersistent. child-navs pred-res))
             pred-res (NavVecEdit. nil pred-res)
@@ -293,7 +293,7 @@
         (when pred-res
           (acc/acc-append! matches this))
         (cond
-          child-navs (if (util/editable? this)
+          child-navs (if (helper/editable? this)
                        (NavSetEdit. child-navs pred-res)
                        (NavSetPersistent. child-navs pred-res))
           pred-res (NavSetEdit. nil pred-res)
@@ -384,7 +384,7 @@
     (let [children (.-children this)
           term     (.-term this)
           updated  (if children
-                     (util/with-transient [m data]
+                     (helper/with-transient [m data]
                        (let [n (acc/acc-size children)]
                          (loop [i 0, m m]
                            (if (< i n)
@@ -520,7 +520,7 @@
     (let [children (.-children this)
           term     (.-term this)
           updated  (if children
-                     (util/with-transient [s data]
+                     (helper/with-transient [s data]
                        (let [n (acc/acc-size children)]
                          (loop [i 0, s (strip-nav-mems-from-set! s children)]
                            (if (< i n)

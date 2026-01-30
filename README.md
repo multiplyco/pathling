@@ -20,7 +20,7 @@ Find and transform values in nested data structures.
 
 ```clojure
 ;; deps.edn
-co.multiply/pathling {:mvn/version "0.2.0"}
+co.multiply/pathling {:mvn/version "0.2.1"}
 ```
 
 ## Why Pathling?
