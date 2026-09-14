@@ -132,6 +132,13 @@ there is no outlier deletion or automatic performance threshold. A single fork
 cannot estimate between-JVM variability. Within-worker bootstrap intervals
 remain available separately and do not capture between-JVM variability.
 
+Criterium subtracts estimated loop overhead before returning samples and
+estimates. Nearly empty operations can consequently have finite zero or negative
+means. These are retained and flagged; percentage spread is omitted for any case
+containing a nonpositive mean. Such estimates do not resolve the operation's cost
+and cannot support percentage-based performance claims. Non-finite means remain
+errors. The measurement settings and overhead estimation are unchanged.
+
 Every worker's `measurement/` directory contains the original artifact format:
 
 - **`run.edn`**: schema version, status, selected cases, options, timestamps,
@@ -152,9 +159,12 @@ to terminate its active child on shutdown. Do not reuse an interrupted output
 directory. Only a `:complete`, validated full-profile batch with all planned
 repetitions is a candidate baseline, and its observed variability still needs review.
 
-Timing retains raw Criterium samples, execution counts, warmup details, estimates,
-and intervals. Sample durations are **nanoseconds per batch**, and estimates such
-as `:mean` are **seconds per call**, following Criterium. Actual return values are
+Timing retains Criterium's returned samples, execution counts, warmup details,
+estimates, and intervals. `:samples` are **overhead-adjusted nanoseconds per batch**,
+and estimates such as `:mean` are **seconds per call**. To normalize a sample to
+microseconds per call, divide by `:execution-count` and by 1000; **do not subtract
+overhead again**. Adjusted samples and `:total-time` can also be negative for
+nearly empty operations; they are not unadjusted clock durations. Actual return values are
 passed to Criterium's result sink, validated outside timing, then omitted from EDN.
 The independent fixture oracle checks traversal order and transformed output;
 repeatability checks catch accidental reuse of mutated state.

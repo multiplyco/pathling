@@ -68,7 +68,9 @@
                 :samples (= (:samples settings) (:sample-count timing) (count (:samples timing)))
                 :execution-count (and (integer? (:execution-count timing)) (pos? (:execution-count timing)))
                 :mean (let [m (first (:mean timing))]
-                        (and (number? m) (Double/isFinite (double m)) (pos? m)))
+                        ;; Criterium subtracts estimated loop overhead. A no-op
+                        ;; can legitimately have a finite zero/negative estimate.
+                        (and (number? m) (Double/isFinite (double m))))
                 :process (and (= pid (get-in run [:process :pid]))
                            (string? (get-in run [:process :started-at])))
                 :allocation (contains? #{:measured :unsupported} (get-in result [:allocation :status]))}]
@@ -88,10 +90,14 @@
   (mapv (fn [id]
           (let [rows (filterv #(= id (:id %)) runs)
                 means (mapv :mean-seconds rows)
-                middle (median means)]
+                middle (median means)
+                unavailable (cond
+                              (some #(not (pos? %)) means) :nonpositive-estimate
+                              (= 1 (count rows)) :insufficient-forks)]
             {:id id :forks (count rows) :mean-seconds means
              :median-seconds middle :min-seconds (apply min means) :max-seconds (apply max means)
-             :spread-percent (when (> (count rows) 1)
+             :spread-unavailable-reason unavailable
+             :spread-percent (when-not unavailable
                                (* 100.0 (/ (- (apply max means) (apply min means)) middle)))
              :allocation-bytes (mapv :allocation-bytes rows)}))
     (distinct (map :id runs))))
@@ -118,16 +124,23 @@
       "Exploratory profile; these timings are not a performance baseline.\n\n")
     "Statistics summarize independent JVM means, in microseconds per call. "
     "Spread is (max - min) / median; it is descriptive, not a confidence interval or pass/fail threshold. "
-    "A single fork cannot establish between-JVM variability. All repetitions and raw samples are retained.\n\n"
+    "A single fork cannot establish between-JVM variability. All repetitions and Criterium samples are retained. "
+    "Criterium already subtracts estimated loop overhead from samples and estimates. "
+    "Zero/negative means indicate that this adjustment cannot resolve the operation's cost; "
+    "they are preserved, with percentage spread omitted for any case containing one.\n\n"
     "| Fixture | Operation | Forks | Median µs | Min µs | Max µs | Spread % | Bytes/call range |\n"
     "|---|---|---:|---:|---:|---:|---:|---:|\n"
     (apply str
-      (for [{:keys [id forks median-seconds min-seconds max-seconds spread-percent allocation-bytes]}
+      (for [{:keys [id forks median-seconds min-seconds max-seconds spread-percent
+                    spread-unavailable-reason allocation-bytes]}
               (:cases batch)]
         (fmt "| %s | %s | %d | %.6f | %.6f | %.6f | %s | %s |\n"
           (name (first id)) (name (second id)) forks
           (* 1e6 median-seconds) (* 1e6 min-seconds) (* 1e6 max-seconds)
-          (if spread-percent (fmt "%.2f" spread-percent) "—")
+          (cond
+            spread-percent (fmt "%.2f" spread-percent)
+            (= :nonpositive-estimate spread-unavailable-reason) "n/a (nonpositive estimate)"
+            :else "—")
           (if (every? number? allocation-bytes)
             (fmt "%.2f–%.2f" (apply min allocation-bytes) (apply max allocation-bytes))
             "unsupported in one or more forks"))))

@@ -258,13 +258,15 @@
     "Commit: `" (get-in run [:context :git :commit]) "`. "
     (when (seq (get-in run [:context :git :status])) "Working tree had changes; source hashes and git.patch are saved. ")
     "\n\nMean time and Criterium's bootstrap interval are in microseconds per call. "
+    "Criterium has already subtracted estimated loop overhead; finite zero/negative estimates are retained "
+    "and indicate costs unresolved by that adjustment. "
     "Allocation includes the measurement loop; its control samples are in run.edn.\n\n"
     "| Fixture | Operation | Matches | Mean µs | Interval µs | Bytes/call |\n"
     "|---|---|---:|---:|---:|---:|\n"
     (apply str
       (for [{:keys [id eligible-matches timing allocation]} (:results run)
             :let [[mean [lo hi]] (:mean timing)]]
-        (format-root "| %s | %s | %d | %.3f | %.3f–%.3f | %s |\n"
+        (format-root "| %s | %s | %d | %.6f | %.6f–%.6f | %s |\n"
           (name (first id)) (name (second id)) eligible-matches
           (* mean 1e6) (* lo 1e6) (* hi 1e6)
           (if-let [b (:mean-bytes-per-call allocation)]

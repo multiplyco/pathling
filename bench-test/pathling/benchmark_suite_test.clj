@@ -103,7 +103,9 @@
            ["changed source" #(assoc-in % [:context :source-sha256 "src/changed"] "different")]
            ["wrong fixture selection" #(assoc % :selected-cases [[:deep-one :path-raw]])]
            ["missing sample" #(update-in % [:results 0 :timing :samples] pop)]
-           ["wrong process" #(assoc-in % [:process :pid] 1)]]]
+           ["wrong process" #(assoc-in % [:process :pid] 1)]
+           ["NaN estimate" #(assoc-in % [:results 0 :timing :mean 0] ##NaN)]
+           ["infinite estimate" #(assoc-in % [:results 0 :timing :mean 0] ##Inf)]]]
     (testing label
       (let [output (support/temporary-output)
             counter (atom 0)]
@@ -138,3 +140,29 @@
     (is (= 100.0 (:spread-percent summary)))
     (is (= [12 14 12 12] (:allocation-bytes summary)))
     (is (nil? (:spread-percent (first (suite/case-summaries [(row 1.0 nil)])))))))
+
+
+(deftest overhead-adjusted-estimates-can-cross-zero
+  (let [output (support/temporary-output)
+        counter (atom 0)
+        means [-1.1e-10 0.0 1.1e-10]]
+    (with-redefs [suite/run-worker! (fake-worker counter
+                                     (fn [run]
+                                       (let [mean (nth means (dec @counter))]
+                                         (-> run
+                                           (assoc-in [:results 0 :timing :mean] [mean [mean mean]])
+                                           (assoc-in [:results 0 :timing :samples] (vec (repeat 6 (* mean 2 1e9))))))))]
+      (is (= :complete (:status (suite/run! {:profile :smoke :forks 3
+                                            :fixtures [:scalar-empty] :operations [:update-array-list]
+                                            :output output})))))
+    (let [batch (read-edn (io/file output "batch.edn"))
+          row (first (:cases batch))]
+      (is (= means (mapv :mean-seconds (:runs batch)) (:mean-seconds row)))
+      (is (= 0.0 (:median-seconds row)))
+      (is (nil? (:spread-percent row)))
+      (is (= :nonpositive-estimate (:spread-unavailable-reason row)))
+      (is (re-find #"n/a \(nonpositive estimate\)" (slurp (io/file output "summary.md"))))))
+  (doseq [means [[-2.0 -1.0] [-1.0 3.0 4.0] [0.0 0.0]]]
+    (let [row (first (suite/case-summaries (mapv #(hash-map :id [:empty :update] :mean-seconds %) means)))]
+      (is (nil? (:spread-percent row)))
+      (is (= :nonpositive-estimate (:spread-unavailable-reason row))))))
