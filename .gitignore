@@ -14,6 +14,7 @@
 /classes/
 /lib/
 /target/
+/benchmarks/results/
 node_modules
 pom.xml
 pom.xml.asc

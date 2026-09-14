@@ -5,12 +5,19 @@
 
  :aliases
  {:dev         {:extra-paths ["dev"]
-                :extra-deps  {nrepl/nrepl         {:mvn/version "1.5.1"}
-                              criterium/criterium {:mvn/version "0.4.6"}}
+                :extra-deps  {nrepl/nrepl {:mvn/version "1.5.1"}}
                 :jvm-opts    ["-Xmx8g"
-                              "-Xss8m"
-                              "-XX:+UnlockExperimentalVMOptions"
-                              "-XX:CompileCommand=blackhole,criterium.blackhole.Blackhole::consume"]}
+                              "-Xss8m"]}
+
+  :bench       {:extra-paths ["bench"]
+                :extra-deps  {org.clojure/clojure {:mvn/version "1.12.4"}
+                              criterium/criterium {:mvn/version "0.4.6"}}
+                :jvm-opts    ["-Xmx2g" "-Xss8m"]
+                :exec-fn     pathling.benchmark/run!}
+
+  :bench-test  {:extra-paths ["bench-test"]
+                :extra-deps  {lambdaisland/kaocha {:mvn/version "1.91.1392"}}
+                :main-opts   ["-m" "kaocha.runner" "--config-file" "bench/tests.edn"]}
 
   :test        {:extra-paths ["test"]
                 :extra-deps  {lambdaisland/kaocha {:mvn/version "1.91.1392"}}}

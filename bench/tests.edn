@@ -1,0 +1,6 @@
+#kaocha/v1
+{:tests [{:id :unit
+          :test-paths ["test" "bench-test"]
+          :ns-patterns [".*-test$"]}]
+ :plugins [:kaocha.plugin/capture-output]
+ :capture-output? true}

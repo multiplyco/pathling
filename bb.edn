@@ -18,6 +18,14 @@
                         (shell "bunx shadow-cljs compile ci")
                         (shell "bunx karma start --single-run"))}
 
+  bench:check  {:doc     "Compile and check library + benchmark correctness on the benchmark classpath"
+                :depends [compile:java]
+                :task    (shell "clojure -Srepro -M:bench:bench-test")}
+
+  bench        {:doc     "Check correctness, then save a JVM benchmark run (accepts -X key/value options)"
+                :depends [bench:check]
+                :task    (apply shell "clojure" "-Srepro" "-X:bench" *command-line-args*)}
+
   build        {:doc  "Build library JAR"
                 :task (shell "clj -T:build jar")}
 
