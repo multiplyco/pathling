@@ -280,7 +280,7 @@ Sorted collections (sorted-map, sorted-set) preserve their type and comparator t
 
 ## Benchmarks
 
-Run `bb bench` to compile, check correctness, and save reproducible JVM benchmark
+Run `bb bench` to compile, check correctness, and save per-case JVM benchmark
 results. The default suite prioritizes raw `path-when` and `update-paths` usage.
 See [benchmark commands and output format](benchmarks/README.md) for focused runs,
 quick checks, and retaining baselines.

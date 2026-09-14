@@ -10,6 +10,7 @@
     [criterium.core :as crit]
     [pathling.fixtures :as fixtures])
   (:import [com.sun.management ThreadMXBean]
+    [java.lang ProcessHandle]
     [java.lang.management ManagementFactory]
     [java.nio.file AtomicMoveNotSupportedException CopyOption Files StandardCopyOption]
     [java.security MessageDigest]
@@ -108,7 +109,7 @@
       [(.getPath f) (file-hash f)])))
 
 
-(defn- context
+(defn context
   []
   (let [runtime (ManagementFactory/getRuntimeMXBean)
         cpu (try (shell/sh "sysctl" "-n" "machdep.cpu.brand_string")
@@ -203,7 +204,7 @@
       (.closeEntry zip))))
 
 
-(defn- write-edn!
+(defn write-edn!
   [file data]
   (let [temporary (io/file (str file ".tmp"))
         target (.toPath (io/file file))]
@@ -215,6 +216,32 @@
       (catch AtomicMoveNotSupportedException _
         (Files/move (.toPath temporary) target
           (into-array CopyOption [StandardCopyOption/REPLACE_EXISTING]))))))
+
+
+(defn create-output!
+  "Reserve a new output directory. Never reuse an existing result directory."
+  [opts ctx]
+  (let [stamp (.format (.withZone (DateTimeFormatter/ofPattern "yyyyMMdd'T'HHmmss'Z'") ZoneOffset/UTC)
+                (Instant/now))
+        directory (io/file (or (:output opts)
+                             (str "benchmarks/results/" stamp "-"
+                               (subs (get-in ctx [:git :commit]) 0 8) "-"
+                               (subs (str (UUID/randomUUID)) 0 8))))]
+    (io/make-parents directory)
+    (Files/createDirectory (.toPath directory) (make-array java.nio.file.attribute.FileAttribute 0))
+    directory))
+
+
+(defn save-sources!
+  [directory ctx]
+  (spit (io/file directory "git.patch") (git "diff" "HEAD" "--binary" "--" "."))
+  (archive-sources! directory ctx))
+
+
+(defn process-identity
+  []
+  {:pid (.pid (ProcessHandle/current))
+   :started-at (str (Instant/ofEpochMilli (.getStartTime (ManagementFactory/getRuntimeMXBean))))})
 
 
 (defn- format-root
@@ -260,24 +287,17 @@
     (if (:list? opts)
       (doseq [{:keys [spec operation]} selected] (prn [(:id spec) operation]))
       (let [ctx (context)
-            stamp (.format (.withZone (DateTimeFormatter/ofPattern "yyyyMMdd'T'HHmmss'Z'") ZoneOffset/UTC)
-                    (Instant/now))
-            directory (io/file (or (:output opts)
-                                 (str "benchmarks/results/" stamp "-"
-                                   (subs (get-in ctx [:git :commit]) 0 8) "-"
-                                   (subs (str (UUID/randomUUID)) 0 8))))
-            _ (io/make-parents directory)
-            _ (Files/createDirectory (.toPath directory) (make-array java.nio.file.attribute.FileAttribute 0))
+            directory (create-output! opts ctx)
             settings (profiles (:profile opts))
             state (atom {:schema-version 1 :fixture-version 1 :status :running
                          :started-at (str (Instant/now)) :options opts
+                         :process (process-identity)
                          :context ctx :measurement-options settings
                          :selected-cases (mapv (fn [{:keys [spec operation]}] [(:id spec) operation]) selected)
                          :results []})]
         (println "Saving" (count selected) "cases to" (.getPath directory)
           "using profile" (:profile opts))
-        (spit (io/file directory "git.patch") (git "diff" "HEAD" "--binary" "--" "."))
-        (archive-sources! directory ctx)
+        (save-sources! directory ctx)
         (checkpoint! directory @state)
         (try
           ;; Prepare and validate every selected case before recording timings.
@@ -315,3 +335,11 @@
               :error {:class (.getName (class e)) :message (.getMessage e)})
             (checkpoint! directory @state)
             (throw e)))))))
+
+
+(defn -main
+  "Single-JVM worker entry point used by pathling.benchmark-suite."
+  [options-file]
+  (try
+    (run! (edn/read-string (slurp options-file)))
+    (finally (shutdown-agents))))

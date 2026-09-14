@@ -22,9 +22,13 @@
                 :depends [compile:java]
                 :task    (shell "clojure -Srepro -M:bench:bench-test")}
 
-  bench        {:doc     "Check correctness, then save a JVM benchmark run (accepts -X key/value options)"
+  bench        {:doc     "Check once, then benchmark each case in fresh JVMs (:forks 3 by default)"
                 :depends [bench:check]
                 :task    (apply shell "clojure" "-Srepro" "-X:bench" *command-line-args*)}
+
+  bench:shared {:doc     "Legacy benchmark selection sharing one JVM (accepts -X key/value options)"
+                :depends [bench:check]
+                :task    (apply shell "clojure" "-Srepro" "-X:bench" "pathling.benchmark/run!" *command-line-args*)}
 
   build        {:doc  "Build library JAR"
                 :task (shell "clj -T:build jar")}

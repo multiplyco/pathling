@@ -6,10 +6,16 @@ Run from the repository root:
 bb bench
 ```
 
-This compiles Java, runs the library and benchmark correctness tests, then starts
-a **fresh JVM** with the benchmark dependencies and JVM options in `deps.edn`.
-The command uses `-Srepro` to exclude user-level Clojure configuration.
-No library implementation is changed by benchmarking.
+This compiles Java and runs the library and benchmark correctness tests **once**,
+then measures **each case in three fresh JVMs** by default. `:forks` controls the
+number of independent JVM repetitions per case. Workers run sequentially in
+complete passes through the selected cases; no two measurements overlap.
+
+The coordinator uses `-Srepro` to exclude user-level Clojure configuration. Each
+worker inherits its exact Java executable, JVM arguments and classpath, including
+the dependencies and JVM options in `deps.edn`. Workers prepare and validate only
+their selected case and retain the existing measurement loop. The coordinator
+performs no measurements. No library implementation is changed by benchmarking.
 
 The default suite prioritizes Quiescent's Pathling usage. Each fixture measures:
 
@@ -40,8 +46,14 @@ collection types and iteration order, not just a random seed.
 # Show the default cases without measuring or creating results.
 bb bench :list? true
 
-# Faster exploratory run of the most common small-input cases.
-bb bench :profile :quick :fixtures '[:small-empty :small-one :small-many]'
+# Establish a thorough primary baseline: 30 cases, six JVMs each.
+bb bench :forks 6 :label '"Primary baseline"'
+
+# Directional spot-check: full measurement settings, fewer cases and JVMs.
+bb bench :forks 2 :fixtures '[:small-one :large-sparse]' :operations '[:path-raw :raw-roundtrip]'
+
+# Faster exploratory measurements; not a full-profile comparison.
+bb bench :profile :quick :forks 1 :fixtures '[:small-empty :small-one :small-many]'
 
 # Full measurement of one operation, with an explicit new output directory.
 bb bench :fixtures '[:large-sparse]' :operations '[:path-raw]' :output '"benchmarks/results/raw-sparse-before"'
@@ -53,7 +65,7 @@ bb bench :suite :secondary :fixtures '[:small-many :large-sparse]'
 bb bench :suite :comparison :fixtures '[:small-many :large-sparse]'
 
 # Exercise all operation and output paths quickly; not a performance baseline.
-bb bench :profile :smoke :suite :all :fixtures '[:small-one]'
+bb bench :profile :smoke :forks 1 :suite :all :fixtures '[:small-one]'
 
 # Check correctness without benchmarking.
 bb bench:check
@@ -69,9 +81,14 @@ it is not a general substitute for Pathling's traversal and update semantics.
 suite. Unknown options and empty or misspelled selections are errors.
 
 The full profile uses Criterium 0.4.6 defaults: at least 10 seconds of JIT warmup,
-60 samples targeting one second each, and bootstrap analysis. The default 30-case
-suite therefore takes **at least about 35 minutes**, plus calibration, GC, and
-analysis. Use filters while developing. `:quick` uses Criterium's quick defaults;
+60 samples targeting one second each, and bootstrap analysis **in every worker**.
+The default 30-case suite with three forks launches 90 measurement JVMs; six
+forks launches 180. Allow several hours for a full baseline, including startup,
+calibration, GC and analysis. `:list? true` prints the planned measurement count
+without creating output or starting workers.
+
+Use filters and fewer forks while developing, keeping the full profile for
+comparisons with a full baseline. `:quick` uses Criterium's quick defaults;
 `:smoke` has deliberately short measurements. Both are labeled exploratory in
 their output. All effective settings are saved; Criterium can extend warmup until
 class loading and compilation settle.
@@ -82,7 +99,40 @@ hardware, and JVM flags for before/after comparisons.
 
 ## Saved output
 
-Each invocation creates a new directory under `benchmarks/results/` containing:
+Each invocation creates a new directory under `benchmarks/results/` (or `:output`):
+
+```text
+batch.edn                 Options, provenance, schedule, progress and JVM results
+summary.md                Per-case variation and links to every measurement
+git.patch                 Tracked changes relative to HEAD
+sources.zip               Library, benchmark, test and build source snapshot
+fork-1/<fixture>/<operation>/
+  options.edn             Exact worker options
+  console.log             Worker standard output and error
+  exit-status             Worker process exit status
+  measurement/
+    run.edn
+    summary.md
+    git.patch
+    sources.zip
+fork-2/...
+```
+
+`batch.edn` records `:execution-mode :per-case-jvm`, each process's PID/start time,
+its launch command, and the planned execution order. `:active-run` identifies a
+running or interrupted worker. Completed child results are accepted only after
+checking their selection, options, sample count, correctness status, process
+identity and provenance against the coordinator. Fixture fingerprints must also
+match between forks. A failed process or inconsistent result stops the batch;
+previous completed results are retained.
+
+The summary reports every JVM mean plus each case's median, minimum, maximum,
+allocation range and `(max - min) / median` spread. It keeps all repetitions;
+there is no outlier deletion or automatic performance threshold. A single fork
+cannot estimate between-JVM variability. Within-worker bootstrap intervals
+remain available separately and do not capture between-JVM variability.
+
+Every worker's `measurement/` directory contains the original artifact format:
 
 - **`run.edn`**: schema version, status, selected cases, options, timestamps,
   revision and working-tree status, source/harness/compiled-class SHA-256 hashes,
@@ -94,10 +144,13 @@ Each invocation creates a new directory under `benchmarks/results/` containing:
 - **`sources.zip`**: library, harness, test, and build source snapshots, including
   untracked files in those locations, so saved results retain the measured source.
 
-Existing output directories are never overwritten. `run.edn` is atomically
-checkpointed after every completed case. A measurement error records `:failed`
-and preserves earlier results; a killed process may leave `:running`. Only a
-`:complete` full-profile run is a candidate baseline.
+Existing output directories are never overwritten. `batch.edn` is atomically
+checkpointed before launching and after validating each worker; `run.edn` is
+checkpointed by the worker. A measurement error records `:failed` and preserves
+earlier results. A killed process may leave `:running`; the coordinator attempts
+to terminate its active child on shutdown. Do not reuse an interrupted output
+directory. Only a `:complete`, validated full-profile batch with all planned
+repetitions is a candidate baseline, and its observed variability still needs review.
 
 Timing retains raw Criterium samples, execution counts, warmup details, estimates,
 and intervals. Sample durations are **nanoseconds per batch**, and estimates such
@@ -114,12 +167,21 @@ subtraction. JVMs without the counter report `:unsupported`. This scope is
 appropriate for synchronous Pathling operations, not for allocations in other
 threads. See the [JDK API](https://docs.oracle.com/en/java/javase/25/docs/api/jdk.management/com/sun/management/ThreadMXBean.html).
 
-Results are ignored by Git by default. To retain a reviewed baseline, copy its
-directory into `benchmarks/baselines/` and commit it along with the relevant
-harness. Keep multiple full runs from separate JVM invocations, ideally at least
-three per revision, on an otherwise idle machine. Assess between-process
-variability as well as within-run intervals; no automatic pass/fail threshold is
-implied. Run measurements sequentially, never concurrently.
+Results are ignored by Git by default. A reviewed baseline can live in an external
+archive, or be copied into `benchmarks/baselines/` and committed with the relevant
+harness. Retain the entire batch, including every child result. Keep the same
+machine, case selection, harness, toolchain, seed, profile and isolation method
+for comparisons. Do not compare isolated results directly with older shared-JVM
+results as evidence of an implementation improvement.
+
+Use at least three forks for routine assessment and more for an initial reference
+or ambiguous results. Review between-process variability and host activity before
+accepting a baseline. Keep representative mixed workloads within cases: isolation
+removes accidental history from other benchmarks, while each fixture still tests
+its own collection mix. Correctness checks and focused full-profile spot-checks
+support iteration; repeat the complete suite for the final assessment. Rerun the
+reference alongside a candidate when small or surprising differences need checking.
+Run batches sequentially on an otherwise idle machine.
 
 The saved runner replaces the former REPL-only benchmark namespace. For interactive
 exploration, start a REPL with `clojure -Srepro -M:dev:bench` after compiling Java,
@@ -130,7 +192,17 @@ then call the same runner:
 (bench/run! {:profile :quick :fixtures [:small-one]})
 ```
 
-REPL calls share JVM state; use `bb bench` for fresh-process measurements.
+REPL calls share JVM state. Use `bb bench` for per-case isolation and repetition.
+
+For deliberate experiments with the former shared-JVM execution model:
+
+```sh
+bb bench:shared :fixtures '[:small-one :deep-one]'
+```
+
+This runs all selected cases in one fresh JVM, produces the original `run.edn`
+layout, and does not accept `:forks`. It retains the old execution model for
+controlled investigations; keep those references separate from isolated batches.
 
 ClojureScript still has its correctness suite (`bb test:cljs`); this runner is
 JVM-only, reflecting its higher performance priority.

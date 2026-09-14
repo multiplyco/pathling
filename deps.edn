@@ -13,7 +13,7 @@
                 :extra-deps  {org.clojure/clojure {:mvn/version "1.12.4"}
                               criterium/criterium {:mvn/version "0.4.6"}}
                 :jvm-opts    ["-Xmx2g" "-Xss8m"]
-                :exec-fn     pathling.benchmark/run!}
+                :exec-fn     pathling.benchmark-suite/run!}
 
   :bench-test  {:extra-paths ["bench-test"]
                 :extra-deps  {lambdaisland/kaocha {:mvn/version "1.91.1392"}}
