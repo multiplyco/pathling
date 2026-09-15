@@ -5,7 +5,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * Navigation structures for Pathling.
+ * Internal navigation structures for Pathling.
+ *
+ * Navigation returned by the Clojure/ClojureScript API is opaque to callers.
+ * None of these Java types or members is public API, regardless of visibility;
+ * callers must not construct or mutate nodes or depend on their representation.
  *
  * These types record the path to matching elements in a data structure,
  * enabling efficient targeted updates without re-scanning.
@@ -473,7 +477,7 @@ public final class Nav {
         }
     }
 
-    /** For backwards compatibility */
+    /** Legacy internal alias; not a public API compatibility guarantee. */
     public static final Updatable SCALAR = Scalar.INSTANCE;
 
     // ========================================================================

@@ -6,9 +6,9 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * Transform values (including map keys) matching a predicate in nested data structures.
- * Builds navigation without collecting matches, then applies updates.
- * Predicates see the original structure; transforms run children before parents.
+ * Internal navigation-only scanner and update wrapper for transform-when with key matching.
+ * Builds navigation without collecting matches, then applies updates through Nav.
+ * Predicates inspect the original structure; transforms run children before parents.
  */
 public final class TransformKeys {
     private TransformKeys() {} // Prevent instantiation

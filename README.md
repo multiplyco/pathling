@@ -110,6 +110,14 @@ Key properties:
 
 ## API
 
+The supported public API is the documented Clojure/ClojureScript surface, including the accumulator helpers.
+All Java types and members in Pathling's implementation are internal, even when declared `public`; they are not
+supported API or extension points and carry no Java source or binary compatibility guarantee.
+
+The `:nav` returned by `path-when` is opaque. Retain it and pass it unchanged to `update-paths` with the scanned input.
+Do not construct or mutate its internals or depend on its concrete type, fields, representation, or serialization.
+The raw match accumulator is intentionally mutable through the documented accumulator operations; navigation is not.
+
 ### `path-when`
 
 Find all values matching a predicate, returning both matches and a navigation structure for updates.
@@ -318,6 +326,11 @@ Run `bb bench` to compile, check correctness, and save per-case JVM benchmark
 results. The default suite prioritizes raw `path-when` and `update-paths` usage.
 See [benchmark commands and output format](benchmarks/README.md) for focused runs,
 quick checks, and retaining baselines.
+
+## Implementation guide
+
+The [Java package documentation](src/co/multiply/pathling/package-info.java) maps the scanner families, explains
+the navigation/update boundary, and records the ownership and traversal contracts shared by the specialized implementations.
 
 ## License
 

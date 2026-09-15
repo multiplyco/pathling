@@ -45,8 +45,9 @@
    A function receives the matched value with any child updates already applied.
    With key matching, an entry's value subtree is updated before its key.
 
-   Navigation captures keys, indices and set members from the scanned input.
-   Reuse it with the original input; rescan after changing the navigated structure.
+   Treat `nav` as opaque: obtain it from `path-when` and pass it unchanged with
+   the scanned input. Its concrete type and internal representation are not API.
+   Rescan after changing the navigated structure.
 
    The third argument can be either:
 
@@ -116,9 +117,13 @@
    Returns map with:
 
    - `:matches` - Vector of matching values in depth-first order (or ArrayList if `:raw-matches true`)
-   - `:nav` - Navigation structure for updating matches (use with `update-paths`)
+   - `:nav` - Opaque navigation value for updating matches (use with `update-paths`)
 
    Returns `nil` if no matches found.
+
+   Retain `nav` and pass it unchanged to `update-paths` with the scanned input.
+   Do not depend on its concrete type, fields, or representation. Java internals
+   are not part of the supported public API.
 
    Options:
 
