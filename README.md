@@ -279,6 +279,39 @@ Pathling handles all standard Clojure collections:
 
 Sorted collections (sorted-map, sorted-set) preserve their type and comparator through transformations.
 
+## Implementation priorities
+
+Pathling backs Quiescent, where library overhead should be small and predictable relative to application work.
+Correctness and performance take priority over code deduplication. Reducing allocation is a first-class objective:
+temporary garbage can impose GC work and latency elsewhere in the application, beyond the measured call.
+
+Prefer specialized traversal using each collection's existing representation and native access mechanisms. Avoid
+converting collections into a common representation merely to share an algorithm. Use general traversal as a fallback
+for other supported types; introduce conversion where semantics require it or measurements justify the tradeoff.
+The possibility that the JVM will optimize away generality is not, by itself, a reason to introduce it. Preserve
+collection identity and traversal semantics when specializing.
+
+Quiescent's main workload is finding a few matches in a potentially large structure. The design targets are:
+
+- A full scan must visit the structure, but work per nonmatch should be minimal.
+- Avoid temporary traversal objects for subtrees without matches, not just retained navigation for those subtrees.
+- Make allocation depend chiefly on matches and the navigation connecting them, sharing common ancestors where possible.
+- Follow recorded paths during updates, accounting for the cost of rebuilding affected collections.
+
+These are targets, not promises of constant overhead or allocation-free traversal. Collection shape, match depth,
+sequence realization, and rebuilding collections also affect cost. Stack usage follows nesting depth and is distinct
+from heap allocation that contributes to GC pressure.
+
+Evaluate execution time, allocated bytes per operation, and variability together. Neither the fastest isolated timing
+nor the lowest allocation count automatically wins; make tradeoffs using representative workloads, examining sustained
+GC effects when needed. Include large structures with zero or few matches to expose costs that grow with the haystack.
+
+Prioritize the JVM implementation and Quiescent's `(p/path-when v type/groundable? {:raw-matches true})` followed by
+`update-paths`. Other operations, including `transform-when`, matter but are less frequent. ClojureScript should retain
+API compatibility and pursue the same efficiency goals, with lower optimization priority than the JVM implementation.
+
+See [next implementation steps](DEVELOPMENT.md) for the proposed optimization work and supporting measurements.
+
 ## Benchmarks
 
 Run `bb bench` to compile, check correctness, and save per-case JVM benchmark

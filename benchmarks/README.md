@@ -1,5 +1,10 @@
 # JVM benchmarks
 
+Interpret results using the project's [implementation priorities](../README.md#implementation-priorities): execution
+time, allocation, and predictability matter together. Give particular attention to large structures with zero or few
+matches, checking whether allocated bytes grow with input size despite a fixed match count. A small retained result
+does not establish low temporary allocation, and timing alone does not capture all downstream GC effects.
+
 Run from the repository root:
 
 ```sh
