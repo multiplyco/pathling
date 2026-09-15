@@ -91,8 +91,9 @@ Measured on an M1 in Clojure, on a randomly generated structure 6 levels deep, w
 The data structure consists of vectors, maps, and sets. This results in ~10,000 nodes, out of which ~300 are
 matches. Criterium and YourKit were used to estimate performance and allocation count.
 
-Pathling's performance scales with match count rather than structure size. The speedup advantage grows as matches
-become sparser relative to the overall structure. Postwalk always visits every node regardless of how many match.
+Scanning visits the structure to find matches. Subsequent updates follow the recorded navigation, avoiding a full
+rescan; their cost also depends on rebuilding the affected collections. Sparse matches can therefore give a larger
+advantage over postwalk, which visits every node on each update.
 
 Note that efficiency claims are mostly about Clojure. Less attention has been given to the ClojureScript equivalent, and
 it could be improved from its current state.
@@ -100,8 +101,8 @@ it could be improved from its current state.
 Key properties:
 
 - **Targeted updates**: Build a navigation structure, then apply multiple updates efficiently as a separate step
-- **Stack-safe**: Recursion depth scales with structure depth, not match count (10,000+ matches won't overflow)
-- **Allocation-friendly**: Object allocations scale with matches, not structure size
+- **Bounded by nesting depth**: Stack usage follows structure depth, not match count; very deep inputs can overflow
+- **Allocation-friendly**: Navigation is retained only for matches and their ancestors; traversal and updates can also allocate
 - **Transducer support**: `find-when` accepts transducers for transformation, filtering, and early termination
 - **`REMOVE` sentinel**: Conditionally remove elements during transformation
 - **Metadata preservation**: Collection metadata survives transformations

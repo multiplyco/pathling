@@ -272,7 +272,8 @@
 
 
 (extend-protocol-many Scannable
-  [List EmptyList LazySeq IndexedSeq RSeq Cons ChunkedCons ChunkedSeq Range Repeat Cycle Iterate]
+  [List EmptyList LazySeq IndexedSeq RSeq Cons ChunkedCons ChunkedSeq Range Repeat Cycle Iterate
+   PersistentQueue PersistentQueueSeq]
   (path-when [this matches pred opts] (path-sequential this matches pred opts))
   (scan-when [this add-match pred opts] (scan-sequential this add-match pred opts)))
 
@@ -412,11 +413,12 @@
                          (if (< i n)
                            (let [^NavKey nav-key (acc/acc-get children i)
                                  old-k           (.-arg nav-key)
-                                 new-k           (if (.-term nav-key) (-replace r old-k) old-k)
                                  child-nav       (.-children nav-key)
                                  result          (if child-nav
                                                    (apply-updates child-nav (get data old-k) r)
-                                                   (get data old-k))]
+                                                   (get data old-k))
+                                 ;; Match the scan order: value subtree, then key.
+                                 new-k           (if (.-term nav-key) (-replace r old-k) old-k)]
                              (recur (inc i)
                                (if (or (identical? new-k REMOVE) (identical? result REMOVE))
                                  m
@@ -575,11 +577,20 @@
          xf        (:xf opts)
          matches   (acc/accumulator)
          step-fn   (fn step
+                     ([] (acc/accumulator))
                      ([acc] acc)
-                     ([acc x] (acc/acc-append! acc x)))
-         rf        (if xf (xf step-fn) step-fn)
-         add-match (fn [x] (rf matches x))]
-     (scan-when data add-match pred opts)
-     (rf matches)
-     (when-not (zero? (acc/acc-size matches))
-       (acc/accumulator->vec matches)))))
+                     ([acc x] (acc/acc-append! acc x)))]
+     (if xf
+       (let [rf        (xf step-fn)
+             state     (volatile! matches)
+             add-match (fn [x] (vswap! state rf x))]
+         (scan-when data add-match pred opts)
+         (let [result (rf (unreduced @state))]
+           (when-not (or (nil? result) (coll? result) (array? result))
+             (throw (js/Error. "find-when transducer must complete to a collection or nil")))
+           (when (seq result)
+             (vec result))))
+       (do
+         (scan-when data #(step-fn matches %) pred opts)
+         (when-not (zero? (acc/acc-size matches))
+           (acc/accumulator->vec matches)))))))

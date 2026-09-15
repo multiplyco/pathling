@@ -10,7 +10,7 @@
                     ScannerMatchesKeys ScannerMatchesKeysXf
                     ScannerMatchesNav ScannerMatchesNavKeys
                     Transform TransformKeys]
-                   [java.util List])))
+            [java.util List])))
 
 
 ;; ## REMOVE sentinel
@@ -42,6 +42,11 @@
 (defn update-paths
   "Apply replacements to all locations identified in `nav` within data structure.
    Updates are applied depth-first (children before parents).
+   A function receives the matched value with any child updates already applied.
+   With key matching, an entry's value subtree is updated before its key.
+
+   Navigation captures keys, indices and set members from the scanned input.
+   Reuse it with the original input; rescan after changing the navigated structure.
 
    The third argument can be either:
 
@@ -52,6 +57,8 @@
    computed externally and must be applied in traversal order. This is useful
    when the same accumulator returned by `path-when` with `:raw-matches true`
    has been mutated in-place with replacement values.
+   Supply one replacement per match, in the order returned by `path-when`.
+   Do not mutate the replacement collection concurrently with the update.
 
    If the replacement is `REMOVE`, the element is removed from its parent collection:
 
@@ -66,7 +73,7 @@
      (update-paths data nav inc))
    ```
 
-   Example with accumulator (zero-allocation pattern):
+   Example reusing the match accumulator:
 
    ```clojure
    (let [{:keys [matches nav]} (path-when data task? {:raw-matches true})]
@@ -116,9 +123,10 @@
    Options:
 
    - `:include-keys` - When true, also match map keys (default: false)
-   - `:raw-matches` - When true, return matches as mutable ArrayList instead of vector.
-                      Enables zero-allocation update pattern: mutate the ArrayList in-place
-                      with replacement values, then pass it directly to `update-paths`.
+   - `:raw-matches` - When true, return a mutable ArrayList (JS array on ClojureScript).
+                      Mutate it in-place with replacement values, then pass it directly
+                      to `update-paths` to avoid copying the replacement collection.
+                      Updating persistent collections still allocates.
 
    Examples:
 
@@ -129,7 +137,7 @@
    (path-when [:a :b :c] number?)
    ;=> nil
 
-   ;; Zero-allocation pattern
+   ;; Reuse the match accumulator
    (let [{:keys [matches nav]} (path-when data task? {:raw-matches true})]
      (dotimes [i (.size matches)]
        (.set matches i (process (.get matches i))))
@@ -162,6 +170,8 @@
      - `:include-keys` - When true, also match and collect map keys (default: false)
 
    Supports early termination with transducers like `(take n)`.
+   Transducers must complete to a collection or `nil`. Completion results are
+   returned as a vector, or `nil` when empty; scalar completion results are errors.
 
    Examples:
 
@@ -196,6 +206,9 @@
 
 (defn transform-when
   "Transform all instances of items matching `pred`.
+
+   Predicates see the original structure. Transform functions run children before
+   parents and receive collections with child updates already applied.
 
    If `tf` returns `REMOVE`, the element is removed from its parent collection.
    Returns data unchanged if no matches found.

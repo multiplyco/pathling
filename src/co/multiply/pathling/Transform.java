@@ -7,7 +7,8 @@ import java.util.Map;
 
 /**
  * Transform values matching a predicate in nested data structures.
- * Scans and applies updates in a single pass without collecting matches.
+ * Builds navigation without collecting matches, then applies updates.
+ * Predicates see the original structure; transforms run children before parents.
  */
 public final class Transform {
     private Transform() {} // Prevent instantiation
@@ -21,18 +22,18 @@ public final class Transform {
      * @return transformed data structure, or obj unchanged if no matches
      */
     public static Object transformWhen(Object obj, IFn pred, IFn tf) {
-        Object nav = navWhen(obj, pred);
+        Nav.Updatable nav = navWhen(obj, pred);
         if (nav == null) {
             return obj;
         }
-        return ((Nav.Updatable) nav).applyUpdates(obj, new FunctionReplacer(tf));
+        return nav.applyUpdates(obj, new FunctionReplacer(tf));
     }
 
     // ========================================================================
     // Internal navigation building
     // ========================================================================
 
-    private static Object navWhen(Object obj, IFn pred) {
+    private static Nav.Updatable navWhen(Object obj, IFn pred) {
         return switch (obj) {
             case null -> navScalar(null, pred);
             case PersistentStructMap m -> navMapStruct(m, pred);
@@ -44,7 +45,7 @@ public final class Transform {
             case PersistentHashSet s -> navHashSet(s, pred);
             case IPersistentSet s -> navSetOther(s, pred);
             case ISeq s -> navSeq(s, pred);
-            case Sequential s -> navSeq(RT.seq(s), pred);
+            case Sequential s -> navSeq(s, pred);
             default -> navScalar(obj, pred);
         };
     }
@@ -53,7 +54,7 @@ public final class Transform {
     // Map scanning
     // ========================================================================
 
-    private static Object navHashMap(PersistentHashMap m, IFn pred) {
+    private static Nav.Updatable navHashMap(PersistentHashMap m, IFn pred) {
         ArrayList<Nav.KeyNav> childNavs = null;
 
         for (Object o : m) {
@@ -61,7 +62,7 @@ public final class Transform {
             Object k = e.getKey();
             Object v = e.getValue();
 
-            Nav.Updatable nav = (Nav.Updatable) navWhen(v, pred);
+            Nav.Updatable nav = navWhen(v, pred);
             if (nav != null) {
                 if (childNavs == null) childNavs = new ArrayList<>();
                 childNavs.add(new Nav.Val(k, nav));
@@ -75,7 +76,7 @@ public final class Transform {
         return null;
     }
 
-    private static Object navArrayMap(PersistentArrayMap m, IFn pred) {
+    private static Nav.Updatable navArrayMap(PersistentArrayMap m, IFn pred) {
         ArrayList<Nav.KeyNav> childNavs = null;
 
         Iterator<?> iter = m.keyIterator();
@@ -83,7 +84,7 @@ public final class Transform {
             Object k = iter.next();
             Object v = m.valAt(k);
 
-            Nav.Updatable nav = (Nav.Updatable) navWhen(v, pred);
+            Nav.Updatable nav = navWhen(v, pred);
             if (nav != null) {
                 if (childNavs == null) childNavs = new ArrayList<>();
                 childNavs.add(new Nav.Val(k, nav));
@@ -97,7 +98,7 @@ public final class Transform {
         return null;
     }
 
-    private static Object navMapOther(IPersistentMap m, IFn pred) {
+    private static Nav.Updatable navMapOther(IPersistentMap m, IFn pred) {
         ArrayList<Nav.KeyNav> childNavs = null;
 
         Iterator<?> iter = (m instanceof IMapIterable mi) ? mi.keyIterator() : RT.iter(RT.keys(m));
@@ -105,7 +106,7 @@ public final class Transform {
             Object k = iter.next();
             Object v = m.valAt(k);
 
-            Nav.Updatable nav = (Nav.Updatable) navWhen(v, pred);
+            Nav.Updatable nav = navWhen(v, pred);
             if (nav != null) {
                 if (childNavs == null) childNavs = new ArrayList<>();
                 childNavs.add(new Nav.Val(k, nav));
@@ -119,7 +120,7 @@ public final class Transform {
         return null;
     }
 
-    private static Object navMapStruct(PersistentStructMap m, IFn pred) {
+    private static Nav.Updatable navMapStruct(PersistentStructMap m, IFn pred) {
         ArrayList<Nav.Val> childNavs = null;
 
         Iterator<?> iter = RT.iter(RT.keys(m));
@@ -127,7 +128,7 @@ public final class Transform {
             Object k = iter.next();
             Object v = m.valAt(k);
 
-            Nav.Updatable nav = (Nav.Updatable) navWhen(v, pred);
+            Nav.Updatable nav = navWhen(v, pred);
             if (nav != null) {
                 if (childNavs == null) childNavs = new ArrayList<>();
                 childNavs.add(new Nav.Val(k, nav));
@@ -145,12 +146,12 @@ public final class Transform {
     // Vector scanning
     // ========================================================================
 
-    private static Object navPersistentVector(PersistentVector v, IFn pred) {
+    private static Nav.Updatable navPersistentVector(PersistentVector v, IFn pred) {
         ArrayList<Nav.Pos> childNavs = null;
 
         int count = v.count();
         for (int i = 0; i < count; i++) {
-            Nav.Updatable nav = (Nav.Updatable) navWhen(v.nth(i), pred);
+            Nav.Updatable nav = navWhen(v.nth(i), pred);
             if (nav != null) {
                 if (childNavs == null) childNavs = new ArrayList<>();
                 childNavs.add(new Nav.Pos(i, nav));
@@ -164,12 +165,12 @@ public final class Transform {
         return null;
     }
 
-    private static Object navVectorOther(IPersistentVector v, IFn pred) {
+    private static Nav.Updatable navVectorOther(IPersistentVector v, IFn pred) {
         ArrayList<Nav.Pos> childNavs = null;
 
         int count = v.count();
         for (int i = 0; i < count; i++) {
-            Nav.Updatable nav = (Nav.Updatable) navWhen(v.nth(i), pred);
+            Nav.Updatable nav = navWhen(v.nth(i), pred);
             if (nav != null) {
                 if (childNavs == null) childNavs = new ArrayList<>();
                 childNavs.add(new Nav.Pos(i, nav));
@@ -187,11 +188,11 @@ public final class Transform {
     // Set scanning
     // ========================================================================
 
-    private static Object navHashSet(PersistentHashSet s, IFn pred) {
+    private static Nav.Updatable navHashSet(PersistentHashSet s, IFn pred) {
         ArrayList<Nav.Mem> childNavs = null;
 
         for (Object elem : (Iterable<?>) s) {
-            Nav.Updatable nav = (Nav.Updatable) navWhen(elem, pred);
+            Nav.Updatable nav = navWhen(elem, pred);
             if (nav != null) {
                 if (childNavs == null) childNavs = new ArrayList<>();
                 childNavs.add(new Nav.Mem(elem, nav));
@@ -205,11 +206,11 @@ public final class Transform {
         return null;
     }
 
-    private static Object navSetOther(IPersistentSet s, IFn pred) {
+    private static Nav.Updatable navSetOther(IPersistentSet s, IFn pred) {
         ArrayList<Nav.Mem> childNavs = null;
 
         for (Object elem : (Iterable<?>) s) {
-            Nav.Updatable nav = (Nav.Updatable) navWhen(elem, pred);
+            Nav.Updatable nav = navWhen(elem, pred);
             if (nav != null) {
                 if (childNavs == null) childNavs = new ArrayList<>();
                 childNavs.add(new Nav.Mem(elem, nav));
@@ -227,15 +228,13 @@ public final class Transform {
     // Sequential scanning
     // ========================================================================
 
-    private static Object navSeq(ISeq s, IFn pred) {
-        if (s == null) return navScalar(null, pred);
-
-        Object originalColl = s;
+    private static Nav.Updatable navSeq(Object originalColl, IFn pred) {
+        ISeq s = RT.seq(originalColl);
         int idx = 0;
         ArrayList<Nav.Pos> childNavs = null;
 
         while (s != null) {
-            Nav.Updatable nav = (Nav.Updatable) navWhen(s.first(), pred);
+            Nav.Updatable nav = navWhen(s.first(), pred);
             if (nav != null) {
                 if (childNavs == null) childNavs = new ArrayList<>();
                 childNavs.add(new Nav.Pos(idx, nav));
@@ -255,7 +254,7 @@ public final class Transform {
     // Scalar scanning
     // ========================================================================
 
-    private static Object navScalar(Object obj, IFn pred) {
+    private static Nav.Updatable navScalar(Object obj, IFn pred) {
         if (RT.booleanCast(pred.invoke(obj))) {
             return Nav.Scalar.INSTANCE;
         }

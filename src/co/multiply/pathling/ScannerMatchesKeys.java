@@ -34,7 +34,7 @@ public final class ScannerMatchesKeys {
             case IPersistentVector v -> scanVector(v, matches, pred);
             case IPersistentSet s -> scanSet(s, matches, pred);
             case ISeq s -> scanSeq(s, matches, pred);
-            case Sequential s -> scanSeq(RT.seq(s), matches, pred);
+            case Sequential s -> scanSeq(s, matches, pred);
             default -> scanScalar(obj, matches, pred);
         }
     }
@@ -74,12 +74,8 @@ public final class ScannerMatchesKeys {
         }
     }
 
-    private static void scanSeq(ISeq s, ArrayList<Object> matches, IFn pred) {
-        if (s == null) {
-            scanScalar(null, matches, pred);
-            return;
-        }
-        Object originalColl = s;
+    private static void scanSeq(Object originalColl, ArrayList<Object> matches, IFn pred) {
+        ISeq s = RT.seq(originalColl);
         while (s != null) {
             scanWhen(s.first(), matches, pred);
             s = s.next();

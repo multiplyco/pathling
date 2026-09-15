@@ -14,7 +14,7 @@ public sealed interface Replacer permits FunctionReplacer, ListReplacer {
     /**
      * Compute the replacement for a matched value.
      *
-     * @param v the original matched value
+     * @param v the matched value, with any child updates already applied
      * @return the replacement value (may be {@link Nav#REMOVE} to delete)
      */
     Object replace(Object v);
