@@ -8,7 +8,8 @@
     [clojure.string :as str]
     [clojure.walk :as walk]
     [criterium.core :as crit]
-    [pathling.fixtures :as fixtures])
+    [pathling.fixtures :as fixtures]
+    [pathling.sequence-fixtures :as sequences])
   (:import [com.sun.management ThreadMXBean]
     [java.lang ProcessHandle]
     [java.lang.management ManagementFactory]
@@ -46,8 +47,8 @@
       (throw (ex-info "Unknown benchmark options" {:options unknown})))
     (when-not (contains? profiles (:profile opts))
       (throw (ex-info "Profile must be :full, :quick, or :smoke" {})))
-    (when-not (#{:primary :secondary :comparison :all} (:suite opts))
-      (throw (ex-info "Suite must be :primary, :secondary, :comparison, or :all" {})))
+    (when-not (#{:primary :secondary :comparison :all :sequence-updates} (:suite opts))
+      (throw (ex-info "Suite must be :primary, :secondary, :comparison, :all, or :sequence-updates" {})))
     (when-not (and (integer? (:seed opts))
                 (<= Long/MIN_VALUE (:seed opts) Long/MAX_VALUE))
       (throw (ex-info "Seed must fit in a Java long" {})))
@@ -70,15 +71,17 @@
               :primary fixtures/primary-operations
               :secondary fixtures/secondary-operations
               :comparison fixtures/comparison-operations
-              :all fixtures/all-operations)
+              :all fixtures/all-operations
+              :sequence-updates sequences/operations)
+        specs (if (= :sequence-updates (:suite opts)) sequences/fixture-specs fixtures/fixture-specs)
         select (fn [available requested label]
                  (when-let [unknown (seq (remove (set available) requested))]
                    (throw (ex-info "Unknown or unavailable benchmark selection"
                             {:kind label :unknown unknown :available available})))
                  (if requested (filterv (set requested) available) available))
-        ids (select (mapv :id fixtures/fixture-specs) (:fixtures opts) :fixtures)
+        ids (select (mapv :id specs) (:fixtures opts) :fixtures)
         ops (select ops (:operations opts) :operations)]
-    (vec (for [spec fixtures/fixture-specs
+    (vec (for [spec specs
                :when ((set ids) (:id spec))
                op ops]
            {:spec spec :operation op}))))
@@ -281,7 +284,7 @@
 
 (defn run!
   "Options: :profile (:full default, :quick, :smoke), :suite (:primary default,
-   :secondary, :comparison, :all), :fixtures [...], :operations [...], :seed, :output (new
+   :secondary, :comparison, :all, :sequence-updates), :fixtures [...], :operations [...], :seed, :output (new
    directory), :label, :allocation-samples, :list?. See benchmarks/README.md."
   [requested]
   (let [opts (options requested)
@@ -304,10 +307,13 @@
         (try
           ;; Prepare and validate every selected case before recording timings.
           ;; Validation is repeated afterwards to catch state carried between calls.
-          (let [cases (vec (mapcat
+          (let [[make-fixture prepare-cases] (if (= :sequence-updates (:suite opts))
+                                             [sequences/make-fixture sequences/prepare-cases]
+                                             [fixtures/make-fixture fixtures/prepare-cases])
+                cases (vec (mapcat
                              (fn [group]
-                               (fixtures/prepare-cases
-                                 (fixtures/make-fixture (:spec (first group)) (:seed opts))
+                               (prepare-cases
+                                 (make-fixture (:spec (first group)) (:seed opts))
                                  (mapv :operation group)))
                              (partition-by (comp :id :spec) selected)))]
             (doseq [{:keys [f validate]} cases]

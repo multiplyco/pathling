@@ -322,20 +322,20 @@ public final class Nav {
     public record SeqNav(ArrayList<Pos> children, boolean terminal, int length) implements Updatable {
         @Override
         public Object applyUpdates(Object data, Replacer r) {
-            // Materialize to ArrayList for O(1) indexed access
-            ArrayList<Object> list;
-            if (data instanceof Collection<?> coll) {
-                list = new ArrayList<>(coll);
-            } else {
-                // Fallback: preallocate using known length
-                list = new ArrayList<>(length);
-                for (ISeq s = RT.seq(data); s != null; s = s.next()) {
-                    list.add(s.first());
-                }
-            }
-
             Object updated;
             if (children != null) {
+                // Materialize only when child updates need indexed access.
+                ArrayList<Object> list;
+                if (data instanceof Collection<?> coll) {
+                    list = new ArrayList<>(coll);
+                } else {
+                    // Fallback: preallocate using known length
+                    list = new ArrayList<>(length);
+                    for (ISeq s = RT.seq(data); s != null; s = s.next()) {
+                        list.add(s.first());
+                    }
+                }
+
                 ArrayList<Integer> removals = null;
                 int n = children.size();
 

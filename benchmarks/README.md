@@ -102,6 +102,29 @@ class loading and compilation settle.
 Use the same fixture seed, source for the harness, dependency versions, JVM,
 hardware, and JVM flags for before/after comparisons.
 
+### Collection-only sequence updates
+
+The opt-in `:sequence-updates` suite measures `:update-function` with navigation
+prepared outside timing. It has list, realized lazy-sequence, and queue inputs
+of lengths 16, 1,024 and 16,384, with only the collection itself matching. The
+replacement callback applies prebuilt metadata, doing constant-size useful work
+and producing a result without rebuilding the elements. Each collection type
+also has a 1,024-element child-update control that replaces its middle element.
+Child-update reconstruction retains the existing list-result behavior.
+
+```sh
+bb bench :suite :sequence-updates :list? true
+bb bench :suite :sequence-updates :forks 3 :fixtures '[:seq-list-collection-16 :seq-list-collection-1024 :seq-list-collection-16384 :seq-list-child-1024]'
+```
+
+These cases are separate from the existing fixtures, including `:suite :all`;
+the default primary suite still contains 30 cases. They model collection-only
+replacement, not Quiescent's usual opaque-leaf workload. Their fingerprints
+include collection representation, metadata and values; lazy inputs are realized
+before timing. Compare control and candidate with the same new harness and input
+definitions on the established benchmark machine. Existing baseline cases are
+retained, but they are not references for these new workloads.
+
 ## Saved output
 
 Each invocation creates a new directory under `benchmarks/results/` (or `:output`):
