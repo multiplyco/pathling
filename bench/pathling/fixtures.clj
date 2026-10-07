@@ -45,6 +45,11 @@
    {:id :hash-map-sparse :shape :map :depth 2 :breadth 16 :match-count 8}])
 
 
+(def hash-map-traversal-specs
+  [{:id :hash-map-dense-flat :shape :map :depth 1 :breadth 32 :match-count 32}
+   {:id :hash-map-dense-nested :shape :map :depth 2 :breadth 32 :match-count 1024}])
+
+
 (defn sha256
   [^String s]
   (apply str (map #(format "%02x" (bit-and 0xff %))

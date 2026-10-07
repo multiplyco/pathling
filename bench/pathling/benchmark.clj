@@ -48,8 +48,8 @@
       (throw (ex-info "Unknown benchmark options" {:options unknown})))
     (when-not (contains? profiles (:profile opts))
       (throw (ex-info "Profile must be :full, :quick, or :smoke" {})))
-    (when-not (#{:primary :secondary :comparison :all :sequence-updates :sparse-scaling} (:suite opts))
-      (throw (ex-info "Suite must be :primary, :secondary, :comparison, :all, :sequence-updates, or :sparse-scaling" {})))
+    (when-not (#{:primary :secondary :comparison :all :sequence-updates :sparse-scaling :hash-map-traversal} (:suite opts))
+      (throw (ex-info "Unknown benchmark suite" {:suite (:suite opts)})))
     (when-not (and (integer? (:seed opts))
                 (<= Long/MIN_VALUE (:seed opts) Long/MAX_VALUE))
       (throw (ex-info "Seed must fit in a Java long" {})))
@@ -74,10 +74,12 @@
               :comparison fixtures/comparison-operations
               :all fixtures/all-operations
               :sequence-updates sequences/operations
-              :sparse-scaling scaling/operations)
+              :sparse-scaling scaling/operations
+              :hash-map-traversal fixtures/primary-operations)
         specs (case (:suite opts)
                 :sequence-updates sequences/fixture-specs
                 :sparse-scaling scaling/fixture-specs
+                :hash-map-traversal fixtures/hash-map-traversal-specs
                 fixtures/fixture-specs)
         select (fn [available requested label]
                  (when-let [unknown (seq (remove (set available) requested))]

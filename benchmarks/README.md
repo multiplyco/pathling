@@ -170,6 +170,24 @@ navigation size. Capture new controls with the same harness and established
 benchmark environment before comparing an implementation change. Existing suites,
 including `:primary` and `:all`, retain their fixture definitions.
 
+### Dense hash-map traversal
+
+The opt-in `:hash-map-traversal` suite complements the zero/one-match scaling
+series with dense matches. `:hash-map-dense-flat` is a 32-entry hash map with
+32 opaque matching leaves; `:hash-map-dense-nested` is a 32-by-32 map structure
+with 1,024 matching leaves. Every map is a persistent hash map. These cases use
+the existing deterministic fixture builder, traversal oracle and update oracle.
+
+```sh
+bb bench :suite :hash-map-traversal :list? true
+bb bench :suite :hash-map-traversal :forks 3
+```
+
+Both fixtures measure raw scanning, update-only work and the roundtrip, for six
+cases. They are separate from the existing suites, including `:all`, and need
+matching controls before assessing an implementation change. Use them to check
+whether a sparse-traversal improvement adds overhead when navigation is dense.
+
 ## Saved output
 
 Each invocation creates a new directory under `benchmarks/results/` (or `:output`):
