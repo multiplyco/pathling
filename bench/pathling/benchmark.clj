@@ -9,6 +9,7 @@
     [clojure.walk :as walk]
     [criterium.core :as crit]
     [pathling.fixtures :as fixtures]
+    [pathling.scaling-fixtures :as scaling]
     [pathling.sequence-fixtures :as sequences])
   (:import [com.sun.management ThreadMXBean]
     [java.lang ProcessHandle]
@@ -47,8 +48,8 @@
       (throw (ex-info "Unknown benchmark options" {:options unknown})))
     (when-not (contains? profiles (:profile opts))
       (throw (ex-info "Profile must be :full, :quick, or :smoke" {})))
-    (when-not (#{:primary :secondary :comparison :all :sequence-updates} (:suite opts))
-      (throw (ex-info "Suite must be :primary, :secondary, :comparison, :all, or :sequence-updates" {})))
+    (when-not (#{:primary :secondary :comparison :all :sequence-updates :sparse-scaling} (:suite opts))
+      (throw (ex-info "Suite must be :primary, :secondary, :comparison, :all, :sequence-updates, or :sparse-scaling" {})))
     (when-not (and (integer? (:seed opts))
                 (<= Long/MIN_VALUE (:seed opts) Long/MAX_VALUE))
       (throw (ex-info "Seed must fit in a Java long" {})))
@@ -72,8 +73,12 @@
               :secondary fixtures/secondary-operations
               :comparison fixtures/comparison-operations
               :all fixtures/all-operations
-              :sequence-updates sequences/operations)
-        specs (if (= :sequence-updates (:suite opts)) sequences/fixture-specs fixtures/fixture-specs)
+              :sequence-updates sequences/operations
+              :sparse-scaling scaling/operations)
+        specs (case (:suite opts)
+                :sequence-updates sequences/fixture-specs
+                :sparse-scaling scaling/fixture-specs
+                fixtures/fixture-specs)
         select (fn [available requested label]
                  (when-let [unknown (seq (remove (set available) requested))]
                    (throw (ex-info "Unknown or unavailable benchmark selection"
@@ -307,8 +312,9 @@
         (try
           ;; Prepare and validate every selected case before recording timings.
           ;; Validation is repeated afterwards to catch state carried between calls.
-          (let [[make-fixture prepare-cases] (if (= :sequence-updates (:suite opts))
-                                             [sequences/make-fixture sequences/prepare-cases]
+          (let [[make-fixture prepare-cases] (case (:suite opts)
+                                             :sequence-updates [sequences/make-fixture sequences/prepare-cases]
+                                             :sparse-scaling [scaling/make-fixture scaling/prepare-cases]
                                              [fixtures/make-fixture fixtures/prepare-cases])
                 cases (vec (mapcat
                              (fn [group]

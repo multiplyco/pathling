@@ -1,8 +1,9 @@
 # Next implementation steps
 
 Proposed on 2026-09-15, following the correctness fixes in `74f0935` and the
-implementation guidance in `0a6c9e9`. The sequence-update change below is implemented;
-the remaining items are proposals. Apply the [implementation priorities](README.md#implementation-priorities)
+implementation guidance in `0a6c9e9`. The sequence-update change and supporting
+scaling suite below are implemented; native map traversal remains a proposal.
+Apply the [implementation priorities](README.md#implementation-priorities)
 when evaluating them.
 
 ## 1. Implemented: avoid materializing sequences for collection-only updates
@@ -41,19 +42,20 @@ navigation/replacement correspondence. Include nil keys and hash collisions in
 correctness checks. Compare array maps and hash maps separately, then check mixed
 structures and dense matches before extending the approach to other scanners.
 
-## 3. Add benchmarks that expose allocation growth
+## 3. Implemented: benchmarks that expose allocation growth
 
 The opaque-leaf [fixture set](bench/pathling/fixtures.clj) includes small zero/one-match
 structures and a large sparse structure with 31 matches. It does not provide a
 controlled size series with a fixed zero or one match.
 
-Add that series before assessing the broader traversal changes. Keep collection
-type and match placement/depth controlled so changes in allocation can be related
-to input size. Include mixed structures as well as focused map cases. The
-collection-only sequence suite above provides a separate update-only size series.
+The opt-in [`:sparse-scaling` suite](benchmarks/README.md#fixed-zeroone-match-scaling)
+adds that controlled series: repeated array maps, hash maps and mixed blocks at
+64, 1,024 and 16,384 leaves, with zero or one match. Collection types, block layouts,
+depths and match placement stay fixed within each family. The collection-only
+sequence suite above provides a separate update-only size series.
 
-Measure raw `path-when`, update-only work, and the roundtrip where relevant.
-Report execution time, allocated bytes per operation, and variation across JVMs.
+The scaling suite measures raw `path-when`, update-only work, and the roundtrip.
+Review execution time, allocated bytes per operation, and variation across JVMs.
 Distinguish total allocation from retained navigation size; investigate sustained
 GC effects when a timing/allocation tradeoff needs more evidence.
 

@@ -125,6 +125,51 @@ before timing. Compare control and candidate with the same new harness and input
 definitions on the established benchmark machine. Existing baseline cases are
 retained, but they are not references for these new workloads.
 
+### Fixed zero/one-match scaling
+
+The opt-in `:sparse-scaling` suite grows inputs while holding opaque-leaf match
+count at zero or one. Each family has 64, 1,024 and 16,384 leaves. A root vector
+contains repeated blocks of a fixed layout:
+
+| Family | Block layout | Leaf depth |
+| --- | --- | --- |
+| `array-maps` | An eight-entry persistent array map | 2 |
+| `hash-maps` | A sixteen-entry persistent hash map | 2 |
+| `mixed` | An array map containing a four-element vector, four-element list, eight-element set and sixteen-entry hash map | 3 |
+
+The single match is always the first leaf visited, in the first block. Map keys,
+block widths, collection types and nesting depths are fixed within each family;
+only the number of blocks grows. Hash-map leaves are assigned in native iteration
+order. Set elements are distinct integers, and the mixed family's match lies in
+its vector. These cases control match placement rather than sampling different
+positions, depths or densities. Map families have different block widths, so
+compare scaling within a family rather than treating them as interchangeable.
+
+```sh
+bb bench :suite :sparse-scaling :list? true
+bb bench :suite :sparse-scaling :forks 3
+bb bench :suite :sparse-scaling :operations '[:path-raw]' :fixtures '[:scale-hash-maps-64-0 :scale-hash-maps-1024-0 :scale-hash-maps-16384-0]'
+```
+
+There are 18 fixtures and 54 cases across `:path-raw`, `:update-array-list` and
+`:raw-roundtrip`; three forks produce 162 fresh measurement JVMs. Update-only
+navigation and replacements are prepared outside timing. A zero-match update
+returns the original input and can be too small to resolve after loop-overhead
+subtraction; retain those estimates without percentage claims. One-match updates
+also include reconstruction of the root vector and affected block.
+
+Inputs and expected replacements are constructed from explicit leaf positions,
+independently of Pathling's navigation. Validation checks matches, navigation,
+updated values, and unchanged input identity for zero-match updates/roundtrips.
+Fingerprints include collection types and iteration order. The seed is recorded
+for compatibility with the runner; these layouts do not use randomness.
+
+Use these cases to distinguish allocation that grows with scanned input from
+allocation needed for matches and their paths. Allocated bytes are not retained
+navigation size. Capture new controls with the same harness and established
+benchmark environment before comparing an implementation change. Existing suites,
+including `:primary` and `:all`, retain their fixture definitions.
+
 ## Saved output
 
 Each invocation creates a new directory under `benchmarks/results/` (or `:output`):
