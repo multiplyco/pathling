@@ -250,14 +250,32 @@ public final class Nav {
                 ITransientVector tv = (ITransientVector) ((IEditableCollection) v).asTransient();
                 ArrayList<Integer> removals = null;
                 int n = children.size();
-                for (int i = 0; i < n; i++) {
-                    Pos p = children.get(i);
-                    Object result = p.child().applyUpdates(v.nth(p.index()), r);
-                    if (result == REMOVE) {
-                        if (removals == null) removals = new ArrayList<>();
-                        removals.add(p.index());
-                    } else {
-                        tv = tv.assocN(p.index(), result);
+                // Select the positional loop once. Scalar matches do not need
+                // the old element; nested navigation still does, and shares
+                // the same replacement cursor through the ordinary path.
+                if (r instanceof ListReplacer positional) {
+                    for (int i = 0; i < n; i++) {
+                        Pos p = children.get(i);
+                        Object result = p.child() instanceof Scalar
+                            ? positional.next()
+                            : p.child().applyUpdates(v.nth(p.index()), positional);
+                        if (result == REMOVE) {
+                            if (removals == null) removals = new ArrayList<>();
+                            removals.add(p.index());
+                        } else {
+                            tv = tv.assocN(p.index(), result);
+                        }
+                    }
+                } else {
+                    for (int i = 0; i < n; i++) {
+                        Pos p = children.get(i);
+                        Object result = p.child().applyUpdates(v.nth(p.index()), r);
+                        if (result == REMOVE) {
+                            if (removals == null) removals = new ArrayList<>();
+                            removals.add(p.index());
+                        } else {
+                            tv = tv.assocN(p.index(), result);
+                        }
                     }
                 }
                 updated = VecRemover.removeIndices((IPersistentVector) tv.persistent(), removals, RT.meta(v));
