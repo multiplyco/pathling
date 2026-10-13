@@ -74,14 +74,39 @@ dispatches through child navigation, and writes the replacement with transient
 `assocN`. Treat reducing that dispatch/lookup work and changing reconstruction
 as separate candidates so their effects can be measured independently.
 
-### Step 1: positional scalar replacements (implemented candidate)
+### Step 1: positional scalar replacements
 
 For `ListReplacer`, the original value is ignored: each match consumes the next
 supplied replacement. When a vector child has `Nav.Scalar` navigation, the
 positional loop now calls `ListReplacer.next()` directly instead of calling
-`v.nth` and `Scalar.applyUpdates`. The positional loop is selected once per vector,
-keeping the ordinary child-update path for nested navigation. Function replacements
-still receive the original value through the generic loop.
+`v.nth` and `Scalar.applyUpdates`. Function replacements still receive the original
+value through the generic loop.
+
+The positional loop remains available for single-child vectors. A candidate that
+required more than one child-navigation entry was evaluated and rejected: it
+did not remove the deep-update cost and lost performance on shallow one-match
+updates. Its added test and benchmark controls are retained.
+
+Extracting both loops into private helpers restored recursive inlining and
+recovered most of the deep-update cost, but slowed function replacements.
+Compiler diagnostics found variable callback inlining: some JVMs retain a call to
+`Replacer.replace` or `IFn.invoke` inside the loop. Both step 1 and the helpers can
+take those less optimized paths, so the helper layout alone is not a proven cause.
+
+Giving the function helper a `FunctionReplacer` parameter did not fix that
+regression. It exposed the concrete target to the compiler, but the tested JVMs
+still declined to inline the callback chain and clean timings did not improve.
+
+The retained implementation extracts only the positional loop. The generic function
+loop stays in `applyUpdates`, alongside the outer replacer test, to preserve more
+of step 1's compilation context. The positional scalar shortcut remains available
+for single-match vectors. Loop order, transient reconstruction, removals and final
+parent replacement are unchanged. No JVM inlining limits are overridden.
+
+Compiler checks confirm recursive inlining with this smaller entry point, and
+measurements show a repeatable deep-update improvement. Function-update results
+remain variable between JVM batches, including a ranking reversal of unchanged
+controls. This layout is retained without claiming a function-performance fix.
 
 Keep transient assignment, delayed removals, metadata restoration and the final
 parent replacement in their existing order. Direct and nested matches must share
@@ -96,7 +121,9 @@ raw accumulator reuse, collection-only matches, child-before-parent callbacks,
 untouched-subtree identity, short/trailing replacement lists and the
 function-replacement fallback. They also
 exercise persistent-vector, ArrayList, LinkedList and custom Java List replacements.
-Performance validation of this candidate remains pending.
+The opt-in [`:vector-updates` control](benchmarks/README.md#sparse-vector-updates)
+adds a wide vector with one matching leaf to measure the single-child tradeoff.
+The single-child gate and typed function helper are not retained.
 
 ### Step 2: sequential construction for fully replaced vectors (deferred)
 

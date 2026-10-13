@@ -50,6 +50,10 @@
    {:id :hash-map-dense-nested :shape :map :depth 2 :breadth 32 :match-count 1024}])
 
 
+(def vector-update-specs
+  [{:id :vector-wide-one :shape :vector :depth 1 :breadth 10000 :match-count 1}])
+
+
 (defn sha256
   [^String s]
   (apply str (map #(format "%02x" (bit-and 0xff %))

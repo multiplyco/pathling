@@ -188,6 +188,25 @@ cases. They are separate from the existing suites, including `:all`, and need
 matching controls before assessing an implementation change. Use them to check
 whether a sparse-traversal improvement adds overhead when navigation is dense.
 
+### Sparse vector updates
+
+The opt-in `:vector-updates` suite supplies `:vector-wide-one`: a 10,000-element
+persistent vector with one opaque matching leaf. It uses the existing seeded
+fixture builder and independent validation. This is a shallow single-child
+navigation control for vector updater specializations; the primary `:deep-one`
+case supplies the nested counterpart and `:wide-many` supplies dense matches.
+
+```sh
+bb bench :suite :vector-updates ':list?' true
+bb bench :suite :vector-updates :operations '[:update-array-list]' :forks 3
+```
+
+The three available operations are raw scan, update-only work and roundtrip.
+Navigation and replacements are prepared outside update-only timing. Existing
+primary/all fixture definitions remain unchanged. New candidates and their
+controls must use this same added harness; older captures have no reference for
+this new input.
+
 ## Saved output
 
 Each invocation creates a new directory under `benchmarks/results/` (or `:output`):

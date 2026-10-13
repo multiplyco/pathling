@@ -166,3 +166,27 @@
       (let [found (p/path-when data (constantly false))]
         (is (nil? found))
         (is (identical? data (p/update-paths data (:nav found) [])))))))
+
+
+(deftest single-child-paths-share-the-cursor-with-multi-child-vectors
+  (doseq [depth [0 1 32 128]]
+    (let [wrap (fn [x] (reduce (fn [child level] (with-meta [child] {:level level})) x (range depth)))
+          leaf (with-meta [:before 42 :after] {:source :leaf})
+          nested (wrap leaf)
+          untouched [:untouched]
+          data (with-meta [0 nested 1 untouched] {:source :outer})
+          {:keys [matches nav]} (p/path-when data integer? {:raw-matches true})]
+      (is (= [0 42 1] (vec matches)))
+      (doseq [value [nil false :replacement p/REMOVE]
+              [kind replacements] (replacement-lists [:head value :tail])]
+        (testing (str depth ", " value ", " kind)
+          (let [expected-leaf (if (identical? p/REMOVE value) [:before :after] [:before value :after])
+                updated (p/update-paths data nav replacements)
+                actual-leaf (nth (iterate first (second updated)) depth)]
+            (is (= [:head (wrap expected-leaf) :tail untouched] updated))
+            (is (= {:source :outer} (meta updated)))
+            (is (= {:source :leaf} (meta actual-leaf)))
+            (is (= (mapv meta (take depth (iterate first nested)))
+                   (mapv meta (take depth (iterate first (second updated))))))
+            (is (identical? untouched (peek updated))))))
+      (is (= [0 (wrap [:before 42 :after]) 1 untouched] data)))))

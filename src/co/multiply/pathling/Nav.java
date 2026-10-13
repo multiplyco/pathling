@@ -245,28 +245,14 @@ public final class Nav {
         @Override
         public Object applyUpdates(Object data, Replacer r) {
             IPersistentVector v = (IPersistentVector) data;
-            Object updated;
+            Object updated = v;
             if (children != null) {
-                ITransientVector tv = (ITransientVector) ((IEditableCollection) v).asTransient();
-                ArrayList<Integer> removals = null;
-                int n = children.size();
-                // Select the positional loop once. Scalar matches do not need
-                // the old element; nested navigation still does, and shares
-                // the same replacement cursor through the ordinary path.
                 if (r instanceof ListReplacer positional) {
-                    for (int i = 0; i < n; i++) {
-                        Pos p = children.get(i);
-                        Object result = p.child() instanceof Scalar
-                            ? positional.next()
-                            : p.child().applyUpdates(v.nth(p.index()), positional);
-                        if (result == REMOVE) {
-                            if (removals == null) removals = new ArrayList<>();
-                            removals.add(p.index());
-                        } else {
-                            tv = tv.assocN(p.index(), result);
-                        }
-                    }
+                    updated = applyPositional(v, positional);
                 } else {
+                    ITransientVector tv = (ITransientVector) ((IEditableCollection) v).asTransient();
+                    ArrayList<Integer> removals = null;
+                    int n = children.size();
                     for (int i = 0; i < n; i++) {
                         Pos p = children.get(i);
                         Object result = p.child().applyUpdates(v.nth(p.index()), r);
@@ -277,13 +263,33 @@ public final class Nav {
                             tv = tv.assocN(p.index(), result);
                         }
                     }
+                    updated = VecRemover.removeIndices((IPersistentVector) tv.persistent(), removals, RT.meta(v));
                 }
-                updated = VecRemover.removeIndices((IPersistentVector) tv.persistent(), removals, RT.meta(v));
-            } else {
-                updated = v;
             }
             return terminal ? r.replace(updated) : updated;
         }
+
+        // Extract only the positional loop to keep the recursive entry small
+        // while retaining the function loop's outer replacer-test context.
+        private IPersistentVector applyPositional(IPersistentVector v, ListReplacer r) {
+            ITransientVector tv = (ITransientVector) ((IEditableCollection) v).asTransient();
+            ArrayList<Integer> removals = null;
+            int n = children.size();
+            for (int i = 0; i < n; i++) {
+                Pos p = children.get(i);
+                Object result = p.child() instanceof Scalar
+                    ? r.next()
+                    : p.child().applyUpdates(v.nth(p.index()), r);
+                if (result == REMOVE) {
+                    if (removals == null) removals = new ArrayList<>();
+                    removals.add(p.index());
+                } else {
+                    tv = tv.assocN(p.index(), result);
+                }
+            }
+            return VecRemover.removeIndices((IPersistentVector) tv.persistent(), removals, RT.meta(v));
+        }
+
     }
 
     /**
