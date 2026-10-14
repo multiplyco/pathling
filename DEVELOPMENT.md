@@ -125,6 +125,21 @@ The opt-in [`:vector-updates` control](benchmarks/README.md#sparse-vector-update
 adds a wide vector with one matching leaf to measure the single-child tradeoff.
 The single-child gate and typed function helper are not retained.
 
+### Direct scalar function replacements
+
+The function loop calls `r.replace(original)` directly for scalar navigation.
+It reads the original vector element once for both scalar and nested matches; function
+replacements require that value. Nested navigation still uses `applyUpdates`.
+This removes the shared scalar wrapper from the hot callback path and gives the
+loop its own call-site profile without changing the positional helper.
+
+This change is retained after modest measured improvements in wide, deep and
+sparse function updates, with unchanged allocation in those cases. Callback
+inlining still varies between JVMs; these results do not establish a fixed speedup
+or resolve every comparison with the earlier layout. Regression coverage checks
+callback order, original values, removals, metadata and repeatability, including
+sparse matches and vector tail/tree boundaries.
+
 ### Step 2: sequential construction for fully replaced vectors (deferred)
 
 When every vector position is a direct scalar match and replacements are supplied

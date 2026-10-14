@@ -255,7 +255,11 @@ public final class Nav {
                     int n = children.size();
                     for (int i = 0; i < n; i++) {
                         Pos p = children.get(i);
-                        Object result = p.child().applyUpdates(v.nth(p.index()), r);
+                        Object original = v.nth(p.index());
+                        // Give scalar function replacements their own call site.
+                        Object result = p.child() instanceof Scalar
+                            ? r.replace(original)
+                            : p.child().applyUpdates(original, r);
                         if (result == REMOVE) {
                             if (removals == null) removals = new ArrayList<>();
                             removals.add(p.index());

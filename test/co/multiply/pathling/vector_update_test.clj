@@ -153,6 +153,31 @@
     (is (= [0 [1 2] [] 3] data))))
 
 
+(deftest scalar-vector-functions-across-tail-and-tree-boundaries
+  (doseq [n [0 1 31 32 33 1023 1024 1025]
+          sparse? [false true]]
+    (let [original (mapv #(+ 1000 (* 3 %)) (range n))
+          data (with-meta original {:source :function-boundaries})
+          pred #(and (integer? %)
+                  (or (not sparse?) (zero? (mod (- % 1000) 9))))
+          resolve-value #(case (mod % 4) 0 nil 1 false 2 p/REMOVE (inc %))
+          expected (into [] (comp (map #(if (pred %) (resolve-value %) %))
+                                 (remove #(identical? p/REMOVE %))) data)
+          expected-seen (filterv pred data)
+          {:keys [nav]} (p/path-when data pred {:raw-matches true})
+          seen (atom [])
+          replace-value #(do (swap! seen conj %) (resolve-value %))]
+      (doseq [update [#(p/update-paths data nav replace-value)
+                     #(p/transform-when data pred replace-value)]
+              _ (range 2)]
+        (reset! seen [])
+        (let [updated (update)]
+          (is (= expected updated))
+          (is (= expected-seen @seen))
+          (is (= (meta data) (meta updated)))
+          (is (= original data)))))))
+
+
 (deftest vector-collection-only-and-no-match-identity
   (doseq [values [[] [1 nil false]]]
     (let [data (with-meta values {:source :original})
