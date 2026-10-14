@@ -207,6 +207,25 @@ primary/all fixture definitions remain unchanged. New candidates and their
 controls must use this same added harness; older captures have no reference for
 this new input.
 
+### Dense vector reconstruction
+
+The opt-in `:dense-vector-updates` suite measures positional update-only work on
+vectors at the 32/33-element threshold and 10,000-element vectors with alternating
+removals, all removals, or only the final 32 elements retained. A fully navigated
+vector with a nested final child checks the cost of rejecting the dense scalar
+path after inspecting almost all navigation entries.
+
+```sh
+bb bench :suite :dense-vector-updates ':list?' true
+bb bench :suite :dense-vector-updates :forks 4
+```
+
+Navigation and replacements are prepared outside measurement. Independent expected
+results validate removal order, nil/false values and nested metadata. Fingerprints
+encode removal markers without object identity. These cases are separate from
+`:primary` and `:all`; run matching controls with the same harness. Existing
+`:wide-many` update/roundtrip cases supply the dense no-removal comparison.
+
 ## Saved output
 
 Each invocation creates a new directory under `benchmarks/results/` (or `:output`):

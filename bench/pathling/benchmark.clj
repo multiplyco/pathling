@@ -8,6 +8,7 @@
     [clojure.string :as str]
     [clojure.walk :as walk]
     [criterium.core :as crit]
+    [pathling.dense-vector-fixtures :as dense-vectors]
     [pathling.fixtures :as fixtures]
     [pathling.scaling-fixtures :as scaling]
     [pathling.sequence-fixtures :as sequences])
@@ -48,7 +49,7 @@
       (throw (ex-info "Unknown benchmark options" {:options unknown})))
     (when-not (contains? profiles (:profile opts))
       (throw (ex-info "Profile must be :full, :quick, or :smoke" {})))
-    (when-not (#{:primary :secondary :comparison :all :sequence-updates :sparse-scaling :hash-map-traversal :vector-updates} (:suite opts))
+    (when-not (#{:primary :secondary :comparison :all :sequence-updates :sparse-scaling :hash-map-traversal :vector-updates :dense-vector-updates} (:suite opts))
       (throw (ex-info "Unknown benchmark suite" {:suite (:suite opts)})))
     (when-not (and (integer? (:seed opts))
                 (<= Long/MIN_VALUE (:seed opts) Long/MAX_VALUE))
@@ -76,12 +77,14 @@
               :sequence-updates sequences/operations
               :sparse-scaling scaling/operations
               :hash-map-traversal fixtures/primary-operations
-              :vector-updates fixtures/primary-operations)
+              :vector-updates fixtures/primary-operations
+              :dense-vector-updates dense-vectors/operations)
         specs (case (:suite opts)
                 :sequence-updates sequences/fixture-specs
                 :sparse-scaling scaling/fixture-specs
                 :hash-map-traversal fixtures/hash-map-traversal-specs
                 :vector-updates fixtures/vector-update-specs
+                :dense-vector-updates dense-vectors/fixture-specs
                 fixtures/fixture-specs)
         select (fn [available requested label]
                  (when-let [unknown (seq (remove (set available) requested))]
@@ -319,6 +322,7 @@
           (let [[make-fixture prepare-cases] (case (:suite opts)
                                              :sequence-updates [sequences/make-fixture sequences/prepare-cases]
                                              :sparse-scaling [scaling/make-fixture scaling/prepare-cases]
+                                             :dense-vector-updates [dense-vectors/make-fixture dense-vectors/prepare-cases]
                                              [fixtures/make-fixture fixtures/prepare-cases])
                 cases (vec (mapcat
                              (fn [group]

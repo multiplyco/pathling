@@ -140,20 +140,32 @@ or resolve every comparison with the earlier layout. Regression coverage checks
 callback order, original values, removals, metadata and repeatability, including
 sparse matches and vector tail/tree boundaries.
 
-### Step 2: sequential construction for fully replaced vectors (deferred)
+### Step 2: sequential construction for fully replaced vectors
 
-When every vector position is a direct scalar match and replacements are supplied
-positionally, evaluate building a new vector sequentially with transient `conj`
-instead of repeatedly assigning into a transient copy of the original. Skip
-`REMOVE` values during construction to avoid a subsequent removal pass.
+For ordinary `PersistentVector` values larger than 32 elements, the updater
+checks that navigation covers every position in order with direct scalar matches.
+It completes this check before consuming any positional replacement. Eligible
+vectors are built sequentially with transient `conj`; `REMOVE` values are skipped
+during construction, avoiding the separate removal pass.
 
-Require complete positional coverage; sparse updates should retain structural
-sharing through the current updater. Preserve replacement consumption order,
-metadata and terminal parent replacement. Evaluate construction cost and allocated
-bytes rather than assuming this path saves either. Do not combine it with step 1.
+Tail-sized vectors, sparse or nested navigation, and other vector implementations
+use the existing updater. The size gate keeps single-match/deep paths out of the
+eligibility scan. Replacement order, metadata and terminal parent replacement are
+preserved. No navigation fields or scanner logic are changed.
 
-Measure step 1 against its immediate predecessor using the same harness. Include
-wide dense updates, sparse updates, mixed nesting and function replacements.
+This change is retained after comparison with the preceding direct-scalar
+implementation using the same harness. Wide positional updates took about 45% less
+time, scan/update roundtrips 17% less, and removal-heavy cases 64–84% less by median.
+All four matched JVM pairs and both measurement blocks favored these cases.
+Removal-heavy allocation fell 88–99.9%; allocation without removals was unchanged.
+
+The accepted tradeoffs are small consistent costs on the single-match vector
+control (about 1.8%) and mixed dense updates (about 1.2%). Deep updates showed no
+consistent regression, and compiler checks retained recursive inlining. Other
+controls remain subject to JVM variation; the results do not establish a universal
+speedup or an optimal size threshold. The opt-in dense-vector benchmark suite
+covers removals, the 32/33-element boundary and late nested-child fallback.
+
 Profiles identify candidate work to remove; their sample shares are not predicted
 speedups. Keep the existing regression comparison's source snapshot separate from
 new implementation candidates.

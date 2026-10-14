@@ -276,9 +276,13 @@ public final class Nav {
         // Extract only the positional loop to keep the recursive entry small
         // while retaining the function loop's outer replacer-test context.
         private IPersistentVector applyPositional(IPersistentVector v, ListReplacer r) {
+            int n = children.size();
+            if (n > 32 && v.getClass() == PersistentVector.class
+                    && n == v.count() && hasFullScalarCoverage(n)) {
+                return rebuildDense(v, r, n);
+            }
             ITransientVector tv = (ITransientVector) ((IEditableCollection) v).asTransient();
             ArrayList<Integer> removals = null;
-            int n = children.size();
             for (int i = 0; i < n; i++) {
                 Pos p = children.get(i);
                 Object result = p.child() instanceof Scalar
@@ -292,6 +296,24 @@ public final class Nav {
                 }
             }
             return VecRemover.removeIndices((IPersistentVector) tv.persistent(), removals, RT.meta(v));
+        }
+
+        // Establish eligibility before advancing the shared replacement cursor.
+        private boolean hasFullScalarCoverage(int n) {
+            for (int i = 0; i < n; i++) {
+                Pos p = children.get(i);
+                if (p.index() != i || !(p.child() instanceof Scalar)) return false;
+            }
+            return true;
+        }
+
+        private IPersistentVector rebuildDense(IPersistentVector v, ListReplacer r, int n) {
+            ITransientVector tv = PersistentVector.EMPTY.asTransient();
+            for (int i = 0; i < n; i++) {
+                Object result = r.next();
+                if (result != REMOVE) tv = (ITransientVector) tv.conj(result);
+            }
+            return (IPersistentVector) withMeta(tv.persistent(), RT.meta(v));
         }
 
     }

@@ -127,6 +127,54 @@
     (is (= [:head [1 2] [] :tail] data))))
 
 
+(deftest dense-vector-rebuild-shares-the-cursor-and-preserves-metadata
+  (let [left (with-meta (vec (range 65)) {:source :left})
+        right (with-meta (vec (range 65 98)) {:source :right})
+        untouched [::untouched]
+        data (with-meta [:head left right untouched :tail] {:source :outer})
+        {:keys [matches nav]} (p/path-when data integer? {:raw-matches true})
+        values (mapv #(if (zero? (mod % 3)) p/REMOVE (replacement %)) (range 98))
+        kept #(filterv (fn [v] (not (identical? p/REMOVE v))) %)
+        expected [:head (kept (subvec values 0 65)) (kept (subvec values 65)) untouched :tail]]
+    (is (= (vec (range 98)) (vec matches)))
+    (doseq [[kind replacements] (replacement-lists values)]
+      (testing (str kind)
+        (dotimes [_ 2]
+          (let [updated (p/update-paths data nav replacements)]
+            (is (= expected updated))
+            (is (= [{:source :outer} {:source :left} {:source :right}]
+                   (mapv meta [updated (nth updated 1) (nth updated 2)])))
+            (is (identical? untouched (nth updated 3)))))))
+    (doseq [[i value] (map-indexed vector values)] (.set ^ArrayList matches i value))
+    (is (= expected (p/update-paths data nav matches)))
+    (is (= values (vec matches)))
+    (is (= [:head (vec (range 65)) (vec (range 65 98)) untouched :tail] data))))
+
+
+(deftest dense-vector-parent-and-late-nested-fallback-consume-once
+  (doseq [nested? [false true]]
+    (let [data (with-meta (if nested?
+                            (conj (vec (range 64)) [64 65])
+                            (vec (range 65)))
+                 {:source :cursor})
+          pred #(or (integer? %) (identical? data %))
+          {:keys [matches nav]} (p/path-when data pred)
+          child-count (dec (count matches))
+          values (into (mapv #(if (even? %) p/REMOVE (replacement %)) (range child-count))
+                   [:root-result :unused])
+          reads (atom [])
+          replacements (proxy [AbstractList] []
+                         (size [] (count values))
+                         (get [i] (swap! reads conj i) (nth values i)))]
+      (dotimes [_ 2]
+        (reset! reads [])
+        (is (= :root-result (p/update-paths data nav replacements)))
+        (is (= (vec (range (inc child-count))) @reads)))
+      (is (thrown? IndexOutOfBoundsException
+            (p/update-paths data nav (subvec values 0 child-count))))
+      (is (= (if nested? (conj (vec (range 64)) [64 65]) (vec (range 65))) data)))))
+
+
 (deftest vector-function-replacements-receive-values-and-updated-parents
   (let [inner (with-meta [1 2] {:source :inner})
         empty-child (with-meta [] {:source :empty})
