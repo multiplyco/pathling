@@ -3,7 +3,8 @@
    protocol predicate without depending on its scheduler or on Quiescent itself."
   (:require [clojure.walk :as walk]
     [co.multiply.pathling :as p])
-  (:import [java.security MessageDigest]
+  (:import [clojure.lang PersistentHashMap]
+    [java.security MessageDigest]
     [java.util ArrayList Collections Random]))
 
 
@@ -113,7 +114,9 @@
                         children (mapv (fn [_] (build (dec d))) (range breadth))]
                     (case kind
                       :vector children
-                      :map (into (array-map)
+                      ;; Dedicated map fixtures remain hash-map controls when
+                      ;; newer runtimes keep larger keyword maps as array maps.
+                      :map (into (if (= :map shape) PersistentHashMap/EMPTY (array-map))
                              (map-indexed (fn [i v] [(keyword (str "k" i)) v]) children))
                       :set (set children)
                       :list (apply list children)))))

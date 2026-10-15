@@ -14,7 +14,7 @@ public final class ScannerMatchesNav {
     private ScannerMatchesNav() {} // Prevent instantiation
 
     /**
-     * One callback per scan, shared by all hash maps in that scan. The reduction
+     * One callback per scan, shared by native map reductions. The reduction
      * accumulator owns each map's child list, so nested maps need no mutable
      * callback stack and predicates can safely start independent scans.
      */
@@ -91,23 +91,12 @@ public final class ScannerMatchesNav {
     }
 
     /**
-     * Scan PersistentArrayMap using keyIterator() to avoid MapEntry allocation.
+     * Scan PersistentArrayMap through its native key/value reduction.
      * Always returns MapEditable (ArrayMap is IEditableCollection).
      */
+    @SuppressWarnings("unchecked")
     private static Nav.Updatable pathArrayMap(PersistentArrayMap m, ArrayList<Object> matches, IFn pred, HashMapReducer hashMaps) {
-        ArrayList<Nav.KeyNav> childNavs = null;
-
-        Iterator<?> iter = m.keyIterator();
-        while (iter.hasNext()) {
-            Object k = iter.next();
-            Object v = m.valAt(k);
-
-            Nav.Updatable nav = pathWhenInternal(v, matches, pred, hashMaps);
-            if (nav != null) {
-                if (childNavs == null) childNavs = new ArrayList<>();
-                childNavs.add(new Nav.Val(k, nav));
-            }
-        }
+        ArrayList<Nav.KeyNav> childNavs = (ArrayList<Nav.KeyNav>) m.kvreduce(hashMaps, null);
 
         boolean predRes = RT.booleanCast(pred.invoke(m));
         if (predRes) matches.add(m);

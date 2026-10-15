@@ -19,6 +19,8 @@
                 :extra-deps  {lambdaisland/kaocha {:mvn/version "1.91.1392"}}
                 :main-opts   ["-m" "kaocha.runner" "--config-file" "bench/tests.edn"]}
 
+  :bench-1.13  {:override-deps {org.clojure/clojure {:mvn/version "1.13.0-alpha9"}}}
+
   :test        {:extra-paths ["test"]
                 :extra-deps  {lambdaisland/kaocha {:mvn/version "1.91.1392"}}}
 

@@ -3,7 +3,7 @@
 Proposed on 2026-09-15, following the correctness fixes in `74f0935` and the
 implementation guidance in `0a6c9e9`, with vector-update proposals added on
 2026-10-09. Sequence updates, hash-map traversal and the supporting scaling
-suite are implemented; remaining candidates are described below.
+suite are implemented; follow-up directions are described below.
 Apply the [implementation priorities](README.md#implementation-priorities)
 when evaluating them.
 
@@ -25,24 +25,43 @@ outside timing and a child-update control for each collection type. Existing
 baseline cases remain unchanged. These collection-only cases are useful for
 Pathling generally; Quiescent's usual workload matches opaque leaves instead.
 
-## 2. Native map traversal: hash maps implemented, array maps proposed
+## 2. Implemented: native hash-map and array-map traversal
 
 In [ScannerMatchesNav.java](src/co/multiply/pathling/ScannerMatchesNav.java),
 `pathHashMap` now uses `kvreduce` with one callback per scan, shared through
 recursive traversal. Each map's child navigation is carried in the reduction
 accumulator. This scanner serves both raw and vector match outputs.
 
-`pathArrayMap` still iterates keys and separately looks up each value. Those
-lookups occur regardless of whether the values contain matches.
+The array-map path replaces key iteration and repeated value lookup with
+native `kvreduce`, reusing the existing per-scan callback. Its accumulator keeps
+nested map state separate. Only the array-map path in this scanner changes;
+broader scanner changes require their own measurements.
 
-Evaluate native array-map reduction separately. Account for callback dispatch
-and state management, and avoid replacing iterator allocation with a callback
-allocation for every map. Broader scanner changes require their own measurements.
+This change is retained after separate baseline/candidate comparisons on
+Clojure 1.12.4 and pinned 1.13.0-alpha9. Clojure 1.13 allows keyword array maps to
+grow to 64 entries; tests cover ordinary persistent, transient and reader
+construction around both the 8/9 and 64/65 boundaries. The opt-in
+`:array-map-traversal` suite records actual map classes and traversal fingerprints,
+with zero, one and dense matches, mixed keys and explicit hash-map controls.
+Do not interpret changes between Clojure versions as gains from this incision.
 
-Preserve traversal order, original collection identity, nested recursion, and
-navigation/replacement correspondence. Include nil keys and hash collisions in
-correctness checks. Compare array maps and hash maps separately, then check mixed
-structures and dense matches before extending the approach to other scanners.
+The dedicated array-map cases improved in every matched pair and measurement
+block on their respective runtimes. Dense eight-keyword scans on 1.12.4 improved
+in all ten pairs across the initial comparison and confirmation. On 1.13,
+64-keyword scans took about 45% less time with one match and 69% less with no
+matches; dense scan/update roundtrips took about 12% less. Allocation in the
+direct fixtures was unchanged, so these results primarily support CPU savings.
+
+A flagged dense hash-map control did not show a consistent slowdown on recheck.
+Keeping all ten JVMs per version across both captures gives a 0.5% lower median
+and 0.15% higher mean, with slow JVMs on both sides. This supports retaining the
+change without claiming exact equivalence or a reliable hash-map speedup.
+
+Regression coverage preserves traversal order, original collection identity,
+nested recursion, navigation/replacement correspondence, nil and colliding keys,
+metadata, reentrant predicates and concurrent scans. Compare array maps and hash
+maps separately, then check mixed structures and dense matches before extending
+the approach to other scanners.
 
 ## 3. Implemented: benchmarks that expose allocation growth
 

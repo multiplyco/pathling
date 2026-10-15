@@ -207,6 +207,39 @@ primary/all fixture definitions remain unchanged. New candidates and their
 controls must use this same added harness; older captures have no reference for
 this new input.
 
+### Array-map traversal across runtimes
+
+The opt-in `:array-map-traversal` suite builds 128 maps with `into`, at widths
+1, 8, 9, 16, 32, 63, 64 and 65. Keyword and mixed-key families have zero, one
+(at the final construction ID), or all leaves matching. Explicit hash-map
+controls at widths 8 and 64 complete the suite. Input descriptions record actual
+map classes and traversal order; runtime-dependent promotion is not inferred from
+the fixture name. Validators check independent expected results, metadata,
+replacement correspondence and no-match identity.
+
+```sh
+bb bench :suite :array-map-traversal ':list?' true
+bb bench :suite :array-map-traversal :fixtures '[:am-keywords-64-one]' :forks 4
+
+# Compile first, then check and measure the pinned 1.13 runtime.
+bb compile:java
+clojure -Srepro -M:bench:bench-1.13:bench-test
+clojure -Srepro -X:bench:bench-1.13 :suite :array-map-traversal :fixtures '[:am-keywords-64-one]' :forks 4
+```
+
+`:bench-1.13` pins Clojure 1.13.0-alpha9 without changing the default 1.12.4
+benchmark runtime. Each baseline/candidate comparison must use the same runtime,
+JDK, fixtures and settings. Worker JVMs inherit the coordinator's classpath and
+JVM options. Keep the two runtime comparisons separate: map representations and
+dependency versions can differ. The [1.13 alpha1 notes](https://clojure.org/news/2026/07/02/clojure-1-13-alpha1)
+describe the larger keyword array maps; [alpha9](https://clojure.org/news/2026/10/09/clojure-1-13-alpha9)
+also aligns transient-map thresholds.
+
+Dedicated `:map` fixtures explicitly construct `PersistentHashMap` so existing
+hash-map controls retain their intended type on both runtimes. All established
+1.12.4 fixture descriptions are unchanged. Mixed-shape fixtures and the new
+array-map suite continue to use ordinary map construction.
+
 ### Dense vector reconstruction
 
 The opt-in `:dense-vector-updates` suite measures positional update-only work on
