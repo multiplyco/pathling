@@ -1,9 +1,15 @@
-# Next implementation steps
+# Development notes
 
-Proposed on 2026-09-15, following the correctness fixes in `74f0935` and the
-implementation guidance in `0a6c9e9`, with vector-update proposals added on
-2026-10-09. Sequence updates, hash-map traversal and the supporting scaling
-suite are implemented; follow-up directions are described below.
+This records the correctness and JVM optimization work completed through `b227ede`.
+The final comparison against the original baseline validated all 30 primary cases
+and four additional controls, with six fresh JVMs per version/case. The accepted
+changes substantially improve the intended map/vector workloads; small deep-scan
+and transducer costs remain documented tradeoffs. This completes that optimization
+round, not the scope of the next release. Release notes accumulate under Unreleased.
+
+The work began on 2026-09-15 following the correctness fixes in `74f0935`, with
+vector-update proposals added on 2026-10-09. Broader sequence reconstruction and
+extending native traversal to other scanners remain optional follow-up work.
 Apply the [implementation priorities](README.md#implementation-priorities)
 when evaluating them.
 

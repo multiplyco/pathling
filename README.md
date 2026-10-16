@@ -76,20 +76,11 @@ By efficient means:
 - It tries hard to not do unnecessary allocations as part of reading.
 - Once a navigation object has been constructed, transforming the values at the original locations is very fast.
 
-To give some kind of comparison to `postwalk` in particular:
-
-| Operation      | Pathling | Postwalk | Diff      |
-|----------------|----------|----------|-----------|
-| find           | 211 µs   | 1.92 ms  | 9x        |
-| - objects/call | 138      | 5,246    | 38x fewer |
-| - bytes/call   | 7.1 KB   | 176 KB   | 25x fewer |
-| transform      | 305 µs   | 1.95 ms  | 6x        |
-| - objects/call | 407      | 5,240    | 13x fewer |
-| - bytes/call   | 21.4 KB  | 174 KB   | 8x fewer  |
-
-Measured on an M1 in Clojure, on a randomly generated structure 6 levels deep, with a branch factor of 5 at each level.
-The data structure consists of vectors, maps, and sets. This results in ~10,000 nodes, out of which ~300 are
-matches. Criterium and YourKit were used to estimate performance and allocation count.
+Performance relative to `clojure.walk/postwalk` depends on the collection shapes, match density and operation.
+The [comparison benchmark](benchmarks/README.md#comparison-with-postwalk) measures direct `find-when` and
+`transform-when` against postwalk implementations on identical deterministic inputs, using isolated JVMs and
+recording elapsed time and allocated bytes. These direct-operation comparisons are separate from Pathling's
+two-phase navigation/update workflow.
 
 Scanning visits the structure to find matches. Subsequent updates follow the recorded navigation, avoiding a full
 rescan; their cost also depends on rebuilding the affected collections. Sparse matches can therefore give a larger
@@ -318,7 +309,7 @@ Prioritize the JVM implementation and Quiescent's `(p/path-when v type/groundabl
 `update-paths`. Other operations, including `transform-when`, matter but are less frequent. ClojureScript should retain
 API compatibility and pursue the same efficiency goals, with lower optimization priority than the JVM implementation.
 
-See [next implementation steps](DEVELOPMENT.md) for the proposed optimization work and supporting measurements.
+See [development notes](DEVELOPMENT.md) for completed optimization work, measured tradeoffs and follow-up directions.
 
 ## Benchmarks
 

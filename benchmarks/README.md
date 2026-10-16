@@ -102,6 +102,46 @@ class loading and compilation settle.
 Use the same fixture seed, source for the harness, dependency versions, JVM,
 hardware, and JVM flags for before/after comparisons.
 
+### Comparison with postwalk
+
+The `:comparison` suite pairs `:find` with `:postwalk-find`, and `:transform` with
+`:postwalk-transform`, on the same ten deterministic fixtures as the primary suite.
+It covers scalar, small, sparse/dense mixed, wide-vector, deeply nested and hash-map
+inputs. Fixture descriptions retain the seed, match count, collection types and
+traversal order. The recorded node count describes the value traversal used by
+Pathling; postwalk additionally visits map keys and entries.
+
+Both find implementations return a vector of the original matching leaves in
+traversal order, or `nil` when there are none. The postwalk implementation collects
+into a transient vector, retaining each `conj!` result in a volatile. It returns
+each visited value unchanged, although postwalk still rebuilds traversed collections.
+Both transforms use the same predicate and replacement function. Only opaque leaves
+match, and keys do not change, so results can be checked against the same expected
+values. This does not establish equivalence for arbitrary collection/key
+predicates, removals or other Pathling-specific behavior.
+
+```sh
+bb bench :suite :comparison ':list?' true
+bb bench :suite :comparison :forks 6
+```
+
+For published comparisons, interleave each Pathling/postwalk pair in balanced
+blocks, with six fresh JVMs per operation/fixture. Use the full profile and the same
+runtime, JVM settings, input and output contract. Report per-fixture median JVM
+means, variation across all runs and allocated bytes per call. Ratios are postwalk
+time or bytes divided by Pathling's; do not report ratios for unresolved near-zero
+timings or allocation medians below one byte per call. The harness measures
+allocated bytes, not object counts or retained
+heap. Preserve all runs and inspect host activity rather than selecting favorable
+samples. This is a comparison of the documented implementations, not every possible
+hand-written traversal or collection strategy.
+
+These direct find/transform comparisons do not time the two-phase collective
+processing workflow. In particular, update-only timings exclude the earlier scan
+and must not be presented as equivalent to a complete postwalk. The former M1
+README table used a different input and measurement setup; it is not a controlled
+before/after reference for the current suite.
+
 ### Collection-only sequence updates
 
 The opt-in `:sequence-updates` suite measures `:update-function` with navigation

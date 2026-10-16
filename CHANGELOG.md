@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Apply positional replacements in the same value-before-key order used when collecting matches.
+- Honor transducer accumulator changes, early reduction and completion results, while preserving `find-when`'s
+  vector-or-nil result contract on Clojure and ClojureScript.
+- Preserve the original sequential collection passed to predicates during traversal.
+
+### Changed
+
+- Reduce JVM map-scanning overhead using native key/value reduction with one shared reducer per scan.
+- Speed up positional vector updates, including sequential reconstruction and removal handling for fully matched vectors.
+- Reduce JVM scalar function-replacement overhead and redundant transducer state writes.
+- Avoid copying sequences when only the collection itself is updated.
+
+### Added
+
+- Regression coverage for traversal order, replacement cursors, metadata, collection boundaries, reentrancy and concurrency.
+- Reproducible JVM benchmarks with isolated workers, allocation measurements, deterministic fixtures and opt-in
+  scaling, map and vector suites, including a pinned Clojure 1.13 comparison runtime.
+
 ## 0.2.1 - 2025-01-30
 
 ### Fixed

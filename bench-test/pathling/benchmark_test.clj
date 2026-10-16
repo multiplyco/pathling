@@ -44,6 +44,22 @@
                        data #(or (fixtures/groundable? %) (keyword? %)) true))))))
 
 
+(deftest find-comparison-retains-order-identity-and-empty-contract
+  (doseq [id [:scalar-empty :small-empty :small-one :small-many :wide-many]]
+    (let [spec (first (filter #(= id (:id %)) fixtures/fixture-specs))
+          {:keys [matches] :as fixture} (fixtures/make-fixture spec 20260914)]
+      (doseq [{:keys [f validate]} (fixtures/prepare-cases fixture [:find :postwalk-find])]
+        (dotimes [_ 2]
+          (let [result (f)]
+            (is (nil? (validate result)))
+            (if (seq matches)
+              (do (is (vector? result))
+                  (is (= matches result))
+                  (is (every? true? (map identical? matches result))))
+              (do (is (nil? result))
+                  (is (thrown? Exception (validate [])))))))))))
+
+
 (deftest selection-errors-are-not-silent
   (is (= 30 (count (bench/select-cases (bench/options {})))))
   (is (thrown? Exception (bench/options {:profile :unknown}))))

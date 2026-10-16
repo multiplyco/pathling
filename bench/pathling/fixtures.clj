@@ -149,12 +149,14 @@
 
 (defn- postwalk-find
   [data]
-  (let [matches (volatile! [])]
+  ;; Give postwalk an efficient collector and the same vector-or-nil result
+  ;; contract as find-when. Preserve the state returned by conj!.
+  (let [matches (volatile! (transient []))]
     (walk/postwalk (fn [x]
-                     (when (groundable? x) (vswap! matches conj x))
+                     (when (groundable? x) (vswap! matches conj! x))
                      x)
       data)
-    @matches))
+    (not-empty (persistent! @matches))))
 
 
 (defn- fail!
@@ -221,7 +223,7 @@
                      #(equal-validator (not-empty (vec (take 1 matches))) %)]
          :transform [#(p/transform-when data groundable? resolve-value)
                      #(equal-validator expected %)]
-         :postwalk-find [#(postwalk-find data) #(equal-validator matches %)]
+         :postwalk-find [#(postwalk-find data) #(equal-validator (not-empty matches) %)]
          :postwalk-transform [#(walk/postwalk (fn [x] (if (groundable? x) (resolve-value x) x)) data)
                               #(equal-validator expected %)]
          :path-keys [#(p/path-when data pred-keys {:include-keys true :raw-matches true})
