@@ -1,0 +1,136 @@
+.gitignore --- Text
+14 14 /classes/
+15 15 /lib/
+16 16 /target/
+.. 17 /benchmarks/results/
+17 18 node_modules
+18 19 pom.xml
+19 20 pom.xml.asc
+
+README.md --- Text
+278 278 
+279 279 Sorted collections (sorted-map, sorted-set) preserve their type and comparator through transformations.
+280 280 
+... 281 ## Benchmarks
+... 282 
+... 283 Run `bb bench` to compile, check correctness, and save reproducible JVM benchmark
+... 284 results. The default suite prioritizes raw `path-when` and `update-paths` usage.
+... 285 See [benchmark commands and output format](benchmarks/README.md) for focused runs,
+... 286 quick checks, and retaining baselines.
+... 287 
+281 288 ## License
+282 289 
+283 290 Eclipse Public License 2.0. Copyright (c) 2025 Multiply. See [LICENSE](LICENSE).
+
+bb.edn --- Clojure
+18 18                         (shell "bunx shadow-cljs compile ci")
+19 19                         (shell "bunx karma start --single-run"))}
+.. 20 
+.. 21   bench:check  {:doc     "Compile and check library + benchmark correctness on the benchmark classpath"
+.. 22                 :depends [compile:java]
+.. 23                 :task    (shell "clojure -Srepro -M:bench:bench-test")}
+.. 24 
+.. 25   bench        {:doc     "Check correctness, then save a JVM benchmark run (accepts -X key/value options)"
+.. 26                 :depends [bench:check]
+.. 27                 :task    (apply shell "clojure" "-Srepro" "-X:bench" *command-line-args*)}
+20 28 
+21 29   build        {:doc  "Build library JAR"
+22 30                 :task (shell "clj -T:build jar")}
+
+deps.edn --- Clojure
+12 12                               "-XX:+UnlockExperimentalVMOptions"
+13 13                               "-XX:CompileCommand=blackhole,criterium.blackhole.Blackhole::consume"]}
+.. 14 
+.. 15   :bench       {:extra-paths ["bench"]
+.. 16                 :extra-deps  {org.clojure/clojure {:mvn/version "1.12.4"}
+.. 17                               criterium/criterium {:mvn/version "0.4.6"}}
+.. 18                 :jvm-opts    ["-Xmx2g" "-Xss8m"]
+.. 19                 :exec-fn     pathling.benchmark/run!}
+.. 20 
+.. 21   :bench-test  {:extra-paths ["bench-test"]
+.. 22                 :extra-deps  {lambdaisland/kaocha {:mvn/version "1.91.1392"}}
+.. 23                 :main-opts   ["-m" "kaocha.runner" "--config-file" "bench/tests.edn"]}
+14 24 
+15 25   :test        {:extra-paths ["test"]
+16 26                 :extra-deps  {lambdaisland/kaocha {:mvn/version "1.91.1392"}}}
+
+dev/pathling/bench.clj --- 1/7 --- Clojure
+  1 (ns pathling.bench                     1 (ns pathling.bench
+  2   "Benchmarks for Pathling.            2   "Interactive benchmarks for Pathl
+  .                                        . ing. For reproducible saved results
+  .                                        .  use
+  .                                        3    `bb bench`; see benchmarks/READM
+  .                                        . E.md.
+  3                                        4 
+  4    Run from REPL:                      5    Run from REPL:
+  5      (require '[pathling.bench :as     6      (require '[pathling.bench :as 
+  . bench])                                . bench])
+  6      (bench/run-all)                   7      (bench/run-all)
+  7                                        8 
+  8    Or run individual benchmarks:       9    Or run individual benchmarks:
+  9      (bench/bench-path-when)          10      (bench/bench-path-when)
+ 10      (bench/bench-update-paths)       11      (bench/bench-update-paths)
+ 11      (bench/bench-find-when)          12      (bench/bench-find-when)
+ 12      (bench/bench-transform-when)     13      (bench/bench-transform-when)
+ 13                                       14 
+ 14    Compare against naive clojure.wa   15    Compare against naive clojure.wa
+ .. lk implementations:                   .. lk implementations:
+ 15      (bench/compare-find)             16      (bench/compare-find)
+ 16      (bench/compare-transform)"       17      (bench/compare-transform)"
+ 17   (:require                           18   (:require
+ 18     [clojure.walk :as walk]           19     [clojure.walk :as walk]
+ 19     [co.multiply.pathling :as p]      20     [co.multiply.pathling :as p]
+
+dev/pathling/bench.clj --- 2/7 --- Clojure
+ 93  94   (let [data @data-atom]
+ 94  95     (assert data "Call (setup!) first")
+ 95  96     (println "\n=== Benchmarking path-when ===")
+ 96  97     (crit/bench (do (p/path-when data #(= :target (:type %))) nil))))
+ 97  98 
+ 98  99 
+ 99 100 (defn bench-update-paths
+
+dev/pathling/bench.clj --- 3/7 --- Clojure
+103 104         nav  @nav-atom]
+104 105     (assert nav "Call (setup!) first")
+105 106     (println "\n=== Benchmarking update-paths ===")
+106 107     (crit/bench (do (p/update-paths data nav #(assoc % :processed true)) nil))))
+107 108 
+108 109 
+109 110 (defn bench-find-when
+
+dev/pathling/bench.clj --- 4/7 --- Clojure
+112 113   (let [data @data-atom]
+113 114     (assert data "Call (setup!) first")
+114 115     (println "\n=== Benchmarking find-when ===")
+115 116     (crit/bench (do (p/find-when data #(= :target (:type %))) nil))))
+116 117 
+117 118 
+118 119 (defn bench-transform-when
+
+dev/pathling/bench.clj --- 5/7 --- Clojure
+121 122   (let [data @data-atom]
+122 123     (assert data "Call (setup!) first")
+123 124     (println "\n=== Benchmarking transform-when ===")
+124 125     (crit/bench (do (p/transform-when data #(= :target (:type %)) #(assoc % :processed true)) nil))))
+125 126 
+126 127 
+127 128 (defn run-all
+
+dev/pathling/bench.clj --- 6/7 --- Clojure
+167 168   (let [data @data-atom]
+168 169     (assert data "Call (setup!) first")
+169 170     (println "\n=== Benchmarking postwalk find ===")
+170 171     (crit/bench (do (naive-find data #(= :target (:type %))) nil))))
+171 172 
+172 173 
+173 174 (defn bench-postwalk-transform
+
+dev/pathling/bench.clj --- 7/7 --- Clojure
+176 177   (let [data @data-atom]
+177 178     (assert data "Call (setup!) first")
+178 179     (println "\n=== Benchmarking postwalk transform ===")
+179 180     (crit/bench (do (naive-transform data #(= :target (:type %)) #(assoc % :processed true)) nil))))
+180 181 
+181 182 
+182 183 ;; Comparison Benchmarks

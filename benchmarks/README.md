@@ -1,0 +1,473 @@
+# JVM benchmarks
+
+Run from the repository root:
+
+```sh
+bb bench
+```
+
+This compiles Java and runs the library and benchmark correctness tests **once**,
+then measures **each case in three fresh JVMs** by default. `:forks` controls the
+number of independent JVM repetitions per case. Workers run sequentially in
+complete passes through the selected cases; no two measurements overlap.
+
+The coordinator uses `-Srepro` to exclude user-level Clojure configuration. Each
+worker inherits its exact Java executable, JVM arguments and classpath, including
+the dependencies and JVM options in `deps.edn`. Workers prepare and validate only
+their selected case and retain the existing measurement loop. The coordinator
+performs no measurements. No library implementation is changed by benchmarking.
+
+The default suite prioritizes Quiescent's Pathling usage. Each fixture measures:
+
+| Operation            | Timed work                                                                                            |
+|----------------------|-------------------------------------------------------------------------------------------------------|
+| `:path-raw`          | `(p/path-when data groundable? {:raw-matches true})`                                                  |
+| `:update-array-list` | `update-paths` with a prebuilt navigation tree and a raw accumulator already filled with replacements |
+| `:raw-roundtrip`     | Raw scan, replace matches in the same accumulator, and update the original data                       |
+
+The update-only case excludes scanning and replacement preparation. The roundtrip
+includes filling the accumulator with synthetic resolved values. Every invocation
+scans the original immutable input; it never scans the previous invocation's output.
+No actual task scheduling, waiting, or asynchronous completion is measured.
+
+Fixtures cover scalar inputs, zero/one/many matches, sparse/dense nested mixed
+collections, a wide vector with 10,000 matches, deep nesting, and hash maps.
+Opaque task-like values use an externally extended Clojure protocol predicate,
+matching the form of Quiescent's `groundable?`. This is a synthetic model, **not a
+benchmark of Quiescent itself**. Values have stable equality and hashes so set
+iteration is reproducible across JVM processes. Saved input fingerprints include
+collection types and iteration order, not just a random seed.
+
+## Selecting a run
+
+`bb bench` forwards Clojure `-X` key/value arguments:
+
+```sh
+# Show the default cases without measuring or creating results.
+bb bench :list? true
+
+# Establish a thorough primary baseline: 30 cases, six JVMs each.
+bb bench :forks 6 :label '"Primary baseline"'
+
+# Directional spot-check: full measurement settings, fewer cases and JVMs.
+bb bench :forks 2 :fixtures '[:small-one :large-sparse]' :operations '[:path-raw :raw-roundtrip]'
+
+# Faster exploratory measurements; not a full-profile comparison.
+bb bench :profile :quick :forks 1 :fixtures '[:small-empty :small-one :small-many]'
+
+# Full measurement of one operation, with an explicit new output directory.
+bb bench :fixtures '[:large-sparse]' :operations '[:path-raw]' :output '"benchmarks/results/raw-sparse-before"'
+
+# Less frequent JVM operations, on a smaller selection of fixtures.
+bb bench :suite :secondary :fixtures '[:small-many :large-sparse]'
+
+# Compare find and transform against clojure.walk/postwalk on the same fixtures.
+bb bench :suite :comparison :fixtures '[:small-many :large-sparse]'
+
+# Exercise all operation and output paths quickly; not a performance baseline.
+bb bench :profile :smoke :forks 1 :suite :all :fixtures '[:small-one]'
+
+# Check correctness without benchmarking.
+bb bench:check
+```
+
+`:suite :all` selects all operations without duplicates. The secondary suite includes vector matches,
+vector/function replacements, plain/transducer/early-terminating finds,
+`transform-when`, and key-inclusive scans. The comparison suite pairs `:find` with
+`:postwalk-find`, and `:transform` with `:postwalk-transform`. Only opaque leaves
+match in these fixtures, making postwalk a suitable comparison for this workload;
+it is not a general substitute for Pathling's traversal and update semantics.
+`:operations` filters within the selected
+suite. Unknown options and empty or misspelled selections are errors.
+
+The full profile uses Criterium 0.4.6 defaults: at least 10 seconds of JIT warmup,
+60 samples targeting one second each, and bootstrap analysis **in every worker**.
+The default 30-case suite with three forks launches 90 measurement JVMs; six
+forks launches 180. Allow several hours for a full baseline, including startup,
+calibration, GC and analysis. `:list? true` prints the planned measurement count
+without creating output or starting workers.
+
+Use filters and fewer forks while developing, keeping the full profile for
+comparisons with a full baseline. `:quick` uses Criterium's quick defaults;
+`:smoke` has deliberately short measurements. Both are labeled exploratory in
+their output. All effective settings are saved; Criterium can extend warmup until
+class loading and compilation settle.
+
+`:seed` defaults to `20260914`. `:label` adds a description to the saved options.
+Use the same fixture seed, source for the harness, dependency versions, JVM,
+hardware, and JVM flags for before/after comparisons.
+
+### Comparison with postwalk
+
+The `:comparison` suite pairs `:find` with `:postwalk-find`, and `:transform` with
+`:postwalk-transform`, on the same ten deterministic fixtures as the primary suite.
+It covers scalar, small, sparse/dense mixed, wide-vector, deeply nested and hash-map
+inputs. Fixture descriptions retain the seed, match count, collection types and
+traversal order. The recorded node count describes the value traversal used by
+Pathling; postwalk additionally visits map keys and entries.
+
+Both find implementations return a vector of the original matching leaves in
+traversal order, or `nil` when there are none. The postwalk implementation collects
+into a transient vector, retaining each `conj!` result in a volatile. It returns
+each visited value unchanged, although postwalk still rebuilds traversed collections.
+Both transforms use the same predicate and replacement function. Only opaque leaves
+match, and keys do not change, so results can be checked against the same expected
+values. This does not establish equivalence for arbitrary collection/key
+predicates, removals or other Pathling-specific behavior.
+
+```sh
+bb bench :suite :comparison ':list?' true
+bb bench :suite :comparison :forks 6
+```
+
+For published comparisons, interleave each Pathling/postwalk pair in balanced
+blocks, with six fresh JVMs per operation/fixture. Use the full profile and the same
+runtime, JVM settings, input and output contract. Report per-fixture median JVM
+means, variation across all runs and allocated bytes per call. Ratios are postwalk
+time or bytes divided by Pathling's; do not report ratios for unresolved near-zero
+timings or allocation medians below one byte per call. The harness measures
+allocated bytes, not object counts or retained
+heap. Preserve all runs and inspect host activity rather than selecting favorable
+samples. This is a comparison of the documented implementations, not every possible
+hand-written traversal or collection strategy.
+
+These direct find/transform comparisons do not time the two-phase collective
+processing workflow. In particular, update-only timings exclude the earlier scan
+and must not be presented as equivalent to a complete postwalk. The former M1
+README table used a different input and measurement setup; it is not a controlled
+before/after reference for the current suite.
+
+### Value-only discovery and staged collective updates
+
+The opt-in `:staged-comparison` suite uses the same ten primary inputs. It compares
+read-only discovery with `tree-seq`, then measures the first and last steps of
+collect → user batch processing → replace separately. User processing is outside
+every timed function; the existing direct-transform comparison remains separate.
+
+| Operation           | Timed work                                                                       |
+|---------------------|----------------------------------------------------------------------------------|
+| `:find`             | Pathling `find-when`, returning a vector of matches or nil                       |
+| `:tree-seq-find`    | Value-only `tree-seq`, filtered into a vector or nil                             |
+| `:collect`          | Pathling `path-when`, returning vector matches and navigation                    |
+| `:replace`          | `update-paths` with navigation and a replacement vector prepared outside timing  |
+| `:postwalk-replace` | Rediscover matching leaves with postwalk and consume the same replacement vector |
+
+`tree-seq` follows map values via `vals`, and other collections via `seq`; it does
+not visit keys or map-entry wrappers. Its result serves both as the read-only
+comparator and as the collection stage for ordinary Clojure. Only opaque leaves
+match, so its preorder enumeration has the same match order as Pathling's
+child-before-parent scan. Collection/key predicates are outside this comparison.
+
+Both replacement implementations receive the original input and the same immutable
+replacement vector. A synthetic batch function prepares `[match-count index
+resolved-value]` per occurrence outside timing. The results depend on the whole
+match collection and distinguish equal values occurring at different positions.
+Postwalk uses a fresh vector iterator per call to consume them; it does not use
+a value-to-replacement map or recompute user transformations. Iterator creation
+and the second full traversal are timed. Postwalk still visits map keys/entries,
+but these fixtures have no matching keys. Replacement values are not rescanned.
+When collection found no matches, both implementations immediately return the
+original input during replacement.
+
+```sh
+bb bench :suite :staged-comparison ':list?' true
+bb bench :suite :staged-comparison :forks 6
+```
+
+There are 50 operation/fixture cases, or 300 fresh JVMs at six repetitions. For a
+controlled comparison, interleave `:find`, `:tree-seq-find` and `:collect` using
+all six operation orders, grouped in three forward/reverse blocks. Interleave
+the two replacement operations in balanced ABBA/BAAB blocks. Reuse the same six
+tree-seq measurements for the two collection comparisons, acknowledging their
+shared baseline. Run every arm with the same frozen harness and full settings.
+
+Report collection and replacement time/allocation separately. A derived traversal
+total is the sum of the two stage medians: `:collect` + `:replace` for Pathling,
+and `:tree-seq-find` + `:postwalk-replace` for ordinary Clojure. Label this as a sum
+of separately measured stages, not a measured end-to-end call or the median of
+paired sums. User work, cache interactions between stages and whole-workflow GC
+effects are not measured. Preserve all JVM observations, modes and nonpositive
+overhead-adjusted estimates; omit ratios involving unresolved stage costs.
+
+The direct postwalk report predates this suite and used the previous OS/kernel.
+Compare implementations within each capture; do not infer changes from absolute
+times across environments. Library implementation is unchanged. No `mapv`
+comparator is included: both implementations must discover the input's shape.
+
+### Collection-only sequence updates
+
+The opt-in `:sequence-updates` suite measures `:update-function` with navigation
+prepared outside timing. It has list, realized lazy-sequence, and queue inputs
+of lengths 16, 1,024 and 16,384, with only the collection itself matching. The
+replacement callback applies prebuilt metadata, doing constant-size useful work
+and producing a result without rebuilding the elements. Each collection type
+also has a 1,024-element child-update control that replaces its middle element.
+Child-update reconstruction retains the existing list-result behavior.
+
+```sh
+bb bench :suite :sequence-updates :list? true
+bb bench :suite :sequence-updates :forks 3 :fixtures '[:seq-list-collection-16 :seq-list-collection-1024 :seq-list-collection-16384 :seq-list-child-1024]'
+```
+
+These cases are separate from the existing fixtures, including `:suite :all`;
+the default primary suite still contains 30 cases. They model collection-only
+replacement, not Quiescent's usual opaque-leaf workload. Their fingerprints
+include collection representation, metadata and values; lazy inputs are realized
+before timing. Compare control and candidate with the same new harness and input
+definitions on the established benchmark machine. Existing baseline cases are
+retained, but they are not references for these new workloads.
+
+### Fixed zero/one-match scaling
+
+The opt-in `:sparse-scaling` suite grows inputs while holding opaque-leaf match
+count at zero or one. Each family has 64, 1,024 and 16,384 leaves. A root vector
+contains repeated blocks of a fixed layout:
+
+| Family       | Block layout                                                                                                   | Leaf depth |
+|--------------|----------------------------------------------------------------------------------------------------------------|------------|
+| `array-maps` | An eight-entry persistent array map                                                                            | 2          |
+| `hash-maps`  | A sixteen-entry persistent hash map                                                                            | 2          |
+| `mixed`      | An array map containing a four-element vector, four-element list, eight-element set and sixteen-entry hash map | 3          |
+
+The single match is always the first leaf visited, in the first block. Map keys,
+block widths, collection types and nesting depths are fixed within each family;
+only the number of blocks grows. Hash-map leaves are assigned in native iteration
+order. Set elements are distinct integers, and the mixed family's match lies in
+its vector. These cases control match placement rather than sampling different
+positions, depths or densities. Map families have different block widths, so
+compare scaling within a family rather than treating them as interchangeable.
+
+```sh
+bb bench :suite :sparse-scaling :list? true
+bb bench :suite :sparse-scaling :forks 3
+bb bench :suite :sparse-scaling :operations '[:path-raw]' :fixtures '[:scale-hash-maps-64-0 :scale-hash-maps-1024-0 :scale-hash-maps-16384-0]'
+```
+
+There are 18 fixtures and 54 cases across `:path-raw`, `:update-array-list` and
+`:raw-roundtrip`; three forks produce 162 fresh measurement JVMs. Update-only
+navigation and replacements are prepared outside timing. A zero-match update
+returns the original input and can be too small to resolve after loop-overhead
+subtraction; retain those estimates without percentage claims. One-match updates
+also include reconstruction of the root vector and affected block.
+
+Inputs and expected replacements are constructed from explicit leaf positions,
+independently of Pathling's navigation. Validation checks matches, navigation,
+updated values, and unchanged input identity for zero-match updates/roundtrips.
+Fingerprints include collection types and iteration order. The seed is recorded
+for compatibility with the runner; these layouts do not use randomness.
+
+Use these cases to distinguish allocation that grows with scanned input from
+allocation needed for matches and their paths. Allocated bytes are not retained
+navigation size. Capture new controls with the same harness and established
+benchmark environment before comparing an implementation change. Existing suites,
+including `:primary` and `:all`, retain their fixture definitions.
+
+### Dense hash-map traversal
+
+The opt-in `:hash-map-traversal` suite complements the zero/one-match scaling
+series with dense matches. `:hash-map-dense-flat` is a 32-entry hash map with
+32 opaque matching leaves; `:hash-map-dense-nested` is a 32-by-32 map structure
+with 1,024 matching leaves. Every map is a persistent hash map. These cases use
+the existing deterministic fixture builder, traversal oracle and update oracle.
+
+```sh
+bb bench :suite :hash-map-traversal :list? true
+bb bench :suite :hash-map-traversal :forks 3
+```
+
+Both fixtures measure raw scanning, update-only work and the roundtrip, for six
+cases. They are separate from the existing suites, including `:all`, and need
+matching controls before assessing an implementation change. Use them to check
+whether a sparse-traversal improvement adds overhead when navigation is dense.
+
+### Sparse vector updates
+
+The opt-in `:vector-updates` suite supplies `:vector-wide-one`: a 10,000-element
+persistent vector with one opaque matching leaf. It uses the existing seeded
+fixture builder and independent validation. This is a shallow single-child
+navigation control for vector updater specializations; the primary `:deep-one`
+case supplies the nested counterpart and `:wide-many` supplies dense matches.
+
+```sh
+bb bench :suite :vector-updates ':list?' true
+bb bench :suite :vector-updates :operations '[:update-array-list]' :forks 3
+```
+
+The three available operations are raw scan, update-only work and roundtrip.
+Navigation and replacements are prepared outside update-only timing. Existing
+primary/all fixture definitions remain unchanged. New candidates and their
+controls must use this same added harness; older captures have no reference for
+this new input.
+
+### Array-map traversal across runtimes
+
+The opt-in `:array-map-traversal` suite builds 128 maps with `into`, at widths
+1, 8, 9, 16, 32, 63, 64 and 65. Keyword and mixed-key families have zero, one (at the final construction ID), or all
+leaves matching. Explicit hash-map
+controls at widths 8 and 64 complete the suite. Input descriptions record actual
+map classes and traversal order; runtime-dependent promotion is not inferred from
+the fixture name. Validators check independent expected results, metadata,
+replacement correspondence and no-match identity.
+
+```sh
+bb bench :suite :array-map-traversal ':list?' true
+bb bench :suite :array-map-traversal :fixtures '[:am-keywords-64-one]' :forks 4
+
+# Compile first, then check and measure the pinned 1.13 runtime.
+bb compile:java
+clojure -Srepro -M:bench:bench-1.13:bench-test
+clojure -Srepro -X:bench:bench-1.13 :suite :array-map-traversal :fixtures '[:am-keywords-64-one]' :forks 4
+```
+
+`:bench-1.13` pins Clojure 1.13.0-alpha9 without changing the default 1.12.4
+benchmark runtime. Each baseline/candidate comparison must use the same runtime,
+JDK, fixtures and settings. Worker JVMs inherit the coordinator's classpath and
+JVM options. Keep the two runtime comparisons separate: map representations and
+dependency versions can differ. The [1.13 alpha1 notes](https://clojure.org/news/2026/07/02/clojure-1-13-alpha1)
+describe the larger keyword array maps; [alpha9](https://clojure.org/news/2026/10/09/clojure-1-13-alpha9)
+also aligns transient-map thresholds.
+
+Dedicated `:map` fixtures explicitly construct `PersistentHashMap` so existing
+hash-map controls retain their intended type on both runtimes. All established
+1.12.4 fixture descriptions are unchanged. Mixed-shape fixtures and the new
+array-map suite continue to use ordinary map construction.
+
+### Dense vector reconstruction
+
+The opt-in `:dense-vector-updates` suite measures positional update-only work on
+vectors at the 32/33-element threshold and 10,000-element vectors with alternating
+removals, all removals, or only the final 32 elements retained. A fully navigated
+vector with a nested final child checks the cost of rejecting the dense scalar
+path after inspecting almost all navigation entries.
+
+```sh
+bb bench :suite :dense-vector-updates ':list?' true
+bb bench :suite :dense-vector-updates :forks 4
+```
+
+Navigation and replacements are prepared outside measurement. Independent expected
+results validate removal order, nil/false values and nested metadata. Fingerprints
+encode removal markers without object identity. These cases are separate from
+`:primary` and `:all`; run matching controls with the same harness. Existing
+`:wide-many` update/roundtrip cases supply the dense no-removal comparison.
+
+## Saved output
+
+Each invocation creates a new directory under `benchmarks/results/` (or `:output`):
+
+```text
+batch.edn                 Options, provenance, schedule, progress and JVM results
+summary.md                Per-case variation and links to every measurement
+git.patch                 Tracked changes relative to HEAD
+sources.zip               Library, benchmark, test and build source snapshot
+fork-1/<fixture>/<operation>/
+  options.edn             Exact worker options
+  console.log             Worker standard output and error
+  exit-status             Worker process exit status
+  measurement/
+    run.edn
+    summary.md
+    git.patch
+    sources.zip
+fork-2/...
+```
+
+`batch.edn` records `:execution-mode :per-case-jvm`, each process's PID/start time,
+its launch command, and the planned execution order. `:active-run` identifies a
+running or interrupted worker. Completed child results are accepted only after
+checking their selection, options, sample count, correctness status, process
+identity and provenance against the coordinator. Fixture fingerprints must also
+match between forks. A failed process or inconsistent result stops the batch;
+previous completed results are retained.
+
+The summary reports every JVM mean plus each case's median, minimum, maximum,
+allocation range and `(max - min) / median` spread. It keeps all repetitions;
+there is no outlier deletion or automatic performance threshold. A single fork
+cannot estimate between-JVM variability. Within-worker bootstrap intervals
+remain available separately and do not capture between-JVM variability.
+
+Criterium subtracts estimated loop overhead before returning samples and
+estimates. Nearly empty operations can consequently have finite zero or negative
+means. These are retained and flagged; percentage spread is omitted for any case
+containing a nonpositive mean. Such estimates do not resolve the operation's cost
+and cannot support percentage-based performance claims. Non-finite means remain
+errors. The measurement settings and overhead estimation are unchanged.
+
+Every worker's `measurement/` directory contains the original artifact format:
+
+- **`run.edn`**: schema version, status, selected cases, options, timestamps,
+  revision and working-tree status, source/harness/compiled-class SHA-256 hashes,
+  loaded scanner location, dependency versions, JVM/OS/CPU/GC details, fixture
+  specifications/fingerprints, validation status, and per-case measurements.
+- **`summary.md`**: a readable table of mean time, bootstrap intervals, and
+  allocated bytes per invocation.
+- **`git.patch`**: tracked working-tree changes relative to HEAD.
+- **`sources.zip`**: library, harness, test, and build source snapshots, including
+  untracked files in those locations, so saved results retain the measured source.
+
+Existing output directories are never overwritten. `batch.edn` is atomically
+checkpointed before launching and after validating each worker; `run.edn` is
+checkpointed by the worker. A measurement error records `:failed` and preserves
+earlier results. A killed process may leave `:running`; the coordinator attempts
+to terminate its active child on shutdown. Do not reuse an interrupted output
+directory. Only a `:complete`, validated full-profile batch with all planned
+repetitions is a candidate baseline, and its observed variability still needs review.
+
+Timing retains Criterium's returned samples, execution counts, warmup details,
+estimates, and intervals. `:samples` are **overhead-adjusted nanoseconds per batch**,
+and estimates such as `:mean` are **seconds per call**. To normalize a sample to
+microseconds per call, divide by `:execution-count` and by 1000; **do not subtract
+overhead again**. Adjusted samples and `:total-time` can also be negative for
+nearly empty operations; they are not unadjusted clock durations. Actual return values are
+passed to Criterium's result sink, validated outside timing, then omitted from EDN.
+The independent fixture oracle checks traversal order and transformed output;
+repeatability checks catch accidental reuse of mutated state.
+
+Allocation is measured separately after timing, using the JVM's
+`com.sun.management.ThreadMXBean` current-thread allocated-byte counter and the
+same Criterium execution loop. These are approximate **allocated bytes**, not live
+heap size or object counts. Empty-loop control samples are saved without
+subtraction. JVMs without the counter report `:unsupported`. This scope is
+appropriate for synchronous Pathling operations, not for allocations in other
+threads. See
+the [JDK API](https://docs.oracle.com/en/java/javase/25/docs/api/jdk.management/com/sun/management/ThreadMXBean.html).
+
+Results are ignored by Git by default. A reviewed baseline can live in an external
+archive, or be copied into `benchmarks/baselines/` and committed with the relevant
+harness. Retain the entire batch, including every child result. Keep the same
+machine, case selection, harness, toolchain, seed, profile and isolation method
+for comparisons. Do not compare isolated results directly with older shared-JVM
+results as evidence of an implementation improvement.
+
+Use at least three forks for routine assessment and more for an initial reference
+or ambiguous results. Review between-process variability and host activity before
+accepting a baseline. Keep representative mixed workloads within cases: isolation
+removes accidental history from other benchmarks, while each fixture still tests
+its own collection mix. Correctness checks and focused full-profile spot-checks
+support iteration; repeat the complete suite for the final assessment. Rerun the
+reference alongside a candidate when small or surprising differences need checking.
+Run batches sequentially on an otherwise idle machine.
+
+The saved runner replaces the former REPL-only benchmark namespace. For interactive
+exploration, start a REPL with `clojure -Srepro -M:dev:bench` after compiling Java,
+then call the same runner:
+
+```clojure
+(require '[pathling.benchmark :as bench])
+(bench/run! {:profile :quick :fixtures [:small-one]})
+```
+
+REPL calls share JVM state. Use `bb bench` for per-case isolation and repetition.
+
+For deliberate experiments with the former shared-JVM execution model:
+
+```sh
+bb bench:shared :fixtures '[:small-one :deep-one]'
+```
+
+This runs all selected cases in one fresh JVM, produces the original `run.edn`
+layout, and does not accept `:forks`. It retains the old execution model for
+controlled investigations; keep those references separate from isolated batches.
+
+ClojureScript still has its correctness suite (`bb test:cljs`); this runner is
+JVM-only, reflecting its higher performance priority.

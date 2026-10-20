@@ -287,6 +287,13 @@ Pathling handles all standard Clojure collections:
 
 Sorted collections (sorted-map, sorted-set) preserve their type and comparator through transformations.
 
+## Benchmarks
+
+Run `bb bench` to compile, check correctness, and save per-case JVM benchmark
+results. The default suite prioritizes raw `path-when` and `update-paths` usage.
+See [benchmark commands and output format](benchmarks/README.md) for focused runs,
+quick checks, and retaining baselines.
+
 ## Implementation guide
 
 The [Java package documentation](src/co/multiply/pathling/package-info.java) maps the scanner families, explains

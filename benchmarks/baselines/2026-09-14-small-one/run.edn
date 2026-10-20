@@ -1,0 +1,646 @@
+{:selected-cases
+ [[:small-one :path-raw]
+  [:small-one :update-array-list]
+  [:small-one :raw-roundtrip]],
+ :started-at "2026-09-14T08:49:52.457556Z",
+ :schema-version 1,
+ :status :complete,
+ :context
+ {:git
+  {:commit "18f2431b196fa31952e14e5e58f282330fb454af",
+   :description "v0.2.1-dirty",
+   :status
+   " M .gitignore\n M README.md\n M bb.edn\n M deps.edn\n M dev/pathling/bench.clj\n?? bench-test/\n?? bench/\n?? benchmarks/"},
+  :source-sha256
+  {"src/co/multiply/pathling.cljc"
+   "605f1dd46c7748b43ac3b3c1e0e19fa7e82294012231165255741d2dd4544acc",
+   "src/co/multiply/pathling/FunctionReplacer.java"
+   "df2bf6194bb7251a2d9202d151a4a49554dad617832e823b9f803fa6491a26c5",
+   "src/co/multiply/pathling/ListReplacer.java"
+   "dbd46d9601add515016ae5f8785e8598270d05ae037881a86e3f6521861b111c",
+   "src/co/multiply/pathling/Nav.java"
+   "c17a1d877efbfc2e7fa5030e5cbd826e0d8290e04d7bc05fb390f66a9adbcc20",
+   "src/co/multiply/pathling/Replacer.java"
+   "48d8de558621cc14f811601acb5569f6e3fbd70a2bd1f22af8e4523043006f63",
+   "src/co/multiply/pathling/ScannerMatches.java"
+   "09f33cbde69d0d213519110ec60afcb9895a39da7a7b53520b8ef69e680fce31",
+   "src/co/multiply/pathling/ScannerMatchesKeys.java"
+   "7e5296336ddd3c28ef39e9980afc263a3fd1a24e3d762c32f013f8a67fe21eca",
+   "src/co/multiply/pathling/ScannerMatchesKeysXf.java"
+   "23eb2f1239d373ae6081f58cfe50bfcd5e2a4d99af19a38c89a774d402b147c8",
+   "src/co/multiply/pathling/ScannerMatchesNav.java"
+   "33a3f085cefb6bb14fce528baec50aea52a68917cec81ab1ed8c92f84fc8d3e6",
+   "src/co/multiply/pathling/ScannerMatchesNavKeys.java"
+   "9593238ab812447e786c0651df85803f121af735f69522f242ed25346fc61c2b",
+   "src/co/multiply/pathling/ScannerMatchesXf.java"
+   "29bea53e3876658b48d6b085a3738eb8d0c909f0212be34917bd08319e9b0809",
+   "src/co/multiply/pathling/Transform.java"
+   "c80935ceeed4a61a4f22c73b0db820ff798ae588e116d9ca9df947e3e4597cc5",
+   "src/co/multiply/pathling/TransformKeys.java"
+   "3866c00c25ed56a87355005f47ea6ce41d7d34507afc7db8338ea2a7a932424f",
+   "src/co/multiply/pathling/accumulator.cljc"
+   "cd1befea4055988f43544e058aaf310b20bd464913fe4384e27f8ccee0cb7100",
+   "src/co/multiply/pathling/helper.cljc"
+   "d03fde7646c911a9ca8dc08a51fb935e3797512cf22b8e0d0f52f6b43e1f799a",
+   "src/co/multiply/pathling/impl.cljs"
+   "b824fbaebf38a586a339e81593629b0017074539c5b7c8f0972a151c34a474e8"},
+  :harness-sha256
+  {"bb.edn"
+   "64a515834582845852110eb39e952dd5d20306afdb29c43639b86530a631ff95",
+   "bench-test/pathling/benchmark_test.clj"
+   "f104a1297f1766781aeada9f65d0c60f66e54e6cebcaa9f09f27d673af114bcb",
+   "bench/pathling/benchmark.clj"
+   "2dd351b907303802f50e3803dd29367d31fd07ff53728424ce54a18381dd1717",
+   "bench/pathling/fixtures.clj"
+   "489610361212c1de02fe4084150334e086320e8dc34a4a41803353a5cfe26461",
+   "bench/tests.edn"
+   "8ab5c47aa4fb2b70f1a8d98c0402da11114e31c7bfee8367041169301d2f5551",
+   "build.clj"
+   "e9dddfa345dd46b05e3cc5c206610b56b8ac89b1a444380df1df958855480001",
+   "deps.edn"
+   "7d68c629d5cd4150954edc2105cb6f1058bad9993280d67c7f7d8c287aefab67",
+   "test/co/multiply/pathling/find_test.cljc"
+   "0f1c9b077cef1ccb19e9983177d2d09c60a27a19e9bf24832114e8e0482d2f74",
+   "test/co/multiply/pathling/path_when_update_paths_test.cljc"
+   "23a46e000f1912d7e3b051d59dd7a9564eb7fac698dde25f7df3130eb1611e2a",
+   "test/co/multiply/pathling/transform_test.cljc"
+   "8dcd36f06a724fb4c24b1f1d24f73192a098e34cd7e259512009d75ab9c6b767",
+   "tests.edn"
+   "20b11afe4c3990d8b968db807e787a1acdbbcaca7dc1d0ccbf6ba79c72f1496a"},
+  :class-sha256
+  {"target/classes/META-INF/maven/co.multiply/pathling/pom.properties"
+   "a8e51ee0753b82d25dee0bb51f0069f0d90b0f5b753382a288e00eaa545aff07",
+   "target/classes/META-INF/maven/co.multiply/pathling/pom.xml"
+   "77f11bd1a81bc7b924cce8621982b3d08d78ea37c5e0d1496cb3f0ba11dff412",
+   "target/classes/co/multiply/pathling.cljc"
+   "605f1dd46c7748b43ac3b3c1e0e19fa7e82294012231165255741d2dd4544acc",
+   "target/classes/co/multiply/pathling/FunctionReplacer.class"
+   "c27e86a13dc40792c91ae66b825c35c3cf4a070043432d506de0f4108b798b7f",
+   "target/classes/co/multiply/pathling/FunctionReplacer.java"
+   "df2bf6194bb7251a2d9202d151a4a49554dad617832e823b9f803fa6491a26c5",
+   "target/classes/co/multiply/pathling/ListReplacer.class"
+   "9d45b42bffb9e2f1e2700567b7e5312967d22fb07338e7b90d2fdbe2013027ac",
+   "target/classes/co/multiply/pathling/ListReplacer.java"
+   "dbd46d9601add515016ae5f8785e8598270d05ae037881a86e3f6521861b111c",
+   "target/classes/co/multiply/pathling/Nav$1.class"
+   "2c01dff05d6f12d71178b8a55b3200ece352ce798b5a0b7cb75eecb275a2ff42",
+   "target/classes/co/multiply/pathling/Nav$Key.class"
+   "6e9e9a67637ed4d960a53cd1b8394a473cc578bc99e573a3e01336f41e98c7db",
+   "target/classes/co/multiply/pathling/Nav$KeyNav.class"
+   "8704898625cac2b1c95f6f42098a7248e72285d51d56678eb4bb0480a7dc630c",
+   "target/classes/co/multiply/pathling/Nav$KeyVal.class"
+   "c92a2b9453609574581986d1c089b73b8e3df6afe4e3fcd16c6b563a0f9109fd",
+   "target/classes/co/multiply/pathling/Nav$MapEditable.class"
+   "1c9ae23f76e779d73553ff92da2f5745259ebb2b10e8089f562cb8329aea4de6",
+   "target/classes/co/multiply/pathling/Nav$MapPersistent.class"
+   "555616326bf3ae0c4e61dba77658114182c7c959999485c042ef5b635ae676b5",
+   "target/classes/co/multiply/pathling/Nav$MapStruct.class"
+   "45549cf97b4842afbc938c6ae489789627e3853c0b111a9152b741a4eae859a5",
+   "target/classes/co/multiply/pathling/Nav$Mem.class"
+   "6b2689fe146bd0db9e0258ca9e5de8f7f354475739b54aab771e8f444ec6a89d",
+   "target/classes/co/multiply/pathling/Nav$Pos.class"
+   "63648ed118a275fe19465c94679c372b45139935825b7f42c8f9da982bb6d4ee",
+   "target/classes/co/multiply/pathling/Nav$Scalar.class"
+   "68d608454298468c1db018401e8313d4a941450586a22020247bbd010c814161",
+   "target/classes/co/multiply/pathling/Nav$SeqNav.class"
+   "b0a62d8a149be60e93a0e29fef37820e9f19f9522233371d57ba3696a3f41785",
+   "target/classes/co/multiply/pathling/Nav$SetEdit.class"
+   "e504365ee6b5810575d060c801a6b74d7a973ffc0df3e3216fbd3405c25a0814",
+   "target/classes/co/multiply/pathling/Nav$SetPersistent.class"
+   "3c9ca6016416bdba8e5f76be6536b9986b91eae154e02e87f243abceccb7cd77",
+   "target/classes/co/multiply/pathling/Nav$Updatable.class"
+   "c95a13b4893819a706397146b97cef46c59bcb122781192f3000f815e8007e55",
+   "target/classes/co/multiply/pathling/Nav$Val.class"
+   "2eb16d584decbf92185b3c56b38864bfa25b4857d45d800b753fed7f765b46f4",
+   "target/classes/co/multiply/pathling/Nav$VecEdit.class"
+   "27a9cd8714a08f11f820752ec28280c0125244f5671aee71cdf825b284f4ffec",
+   "target/classes/co/multiply/pathling/Nav$VecPersistent.class"
+   "37f7f8dfa1b1adcaf1f977e8bd5debf87374aef850f121bb16dd7d629e846978",
+   "target/classes/co/multiply/pathling/Nav$VecRemover.class"
+   "9002911da9b046d226f48e885afdbde89972a8eaecd64ae2618b094169ce3805",
+   "target/classes/co/multiply/pathling/Nav.class"
+   "0b3b64b062457ff81a409064292871615890d4d1d595c108ba781f95ee968efe",
+   "target/classes/co/multiply/pathling/Nav.java"
+   "c17a1d877efbfc2e7fa5030e5cbd826e0d8290e04d7bc05fb390f66a9adbcc20",
+   "target/classes/co/multiply/pathling/Replacer.class"
+   "97f120aacf73ee3345468dbd1f17d0c8f69b82ddb1e9c9078c2ac9b4d4c01108",
+   "target/classes/co/multiply/pathling/Replacer.java"
+   "48d8de558621cc14f811601acb5569f6e3fbd70a2bd1f22af8e4523043006f63",
+   "target/classes/co/multiply/pathling/ScannerMatches.class"
+   "256f7219ba2520bcc2f7b5c58573bef6fe5f18382cb3706ed098d96e8d4c3385",
+   "target/classes/co/multiply/pathling/ScannerMatches.java"
+   "09f33cbde69d0d213519110ec60afcb9895a39da7a7b53520b8ef69e680fce31",
+   "target/classes/co/multiply/pathling/ScannerMatchesKeys.class"
+   "5a80f349baf6760330b7df126eb5aa75bb7a3233958fc2a5e7356a43714102f5",
+   "target/classes/co/multiply/pathling/ScannerMatchesKeys.java"
+   "7e5296336ddd3c28ef39e9980afc263a3fd1a24e3d762c32f013f8a67fe21eca",
+   "target/classes/co/multiply/pathling/ScannerMatchesKeysXf$1.class"
+   "1fc61d146d153d6c9c8a34fbf4be3c21217ba9cec80d0d42a0707f4fc303a104",
+   "target/classes/co/multiply/pathling/ScannerMatchesKeysXf$2.class"
+   "36376df95af75a5a12fc77553b4bc3a4306c3ac0f0194d9da703b2cb425198c9",
+   "target/classes/co/multiply/pathling/ScannerMatchesKeysXf.class"
+   "7a7ce223154b129818a395487bfe49a692601480844699f763a7091dfb846870",
+   "target/classes/co/multiply/pathling/ScannerMatchesKeysXf.java"
+   "23eb2f1239d373ae6081f58cfe50bfcd5e2a4d99af19a38c89a774d402b147c8",
+   "target/classes/co/multiply/pathling/ScannerMatchesNav.class"
+   "af2304aa3d88cb448921e3e248abcf4f80d2db5c0733f097dedc9dbe995174f5",
+   "target/classes/co/multiply/pathling/ScannerMatchesNav.java"
+   "33a3f085cefb6bb14fce528baec50aea52a68917cec81ab1ed8c92f84fc8d3e6",
+   "target/classes/co/multiply/pathling/ScannerMatchesNavKeys.class"
+   "e74a16b6a6e92a3fb3666e0fb17c0058dbbe4d538eee553c230c96633136c076",
+   "target/classes/co/multiply/pathling/ScannerMatchesNavKeys.java"
+   "9593238ab812447e786c0651df85803f121af735f69522f242ed25346fc61c2b",
+   "target/classes/co/multiply/pathling/ScannerMatchesXf$1.class"
+   "104a7704b6c9ce2d8260874dd98dff645aa83883a52b91735634948ad668a309",
+   "target/classes/co/multiply/pathling/ScannerMatchesXf$2.class"
+   "e075a8655cd599b855c4a6c5ace8a1ef1c4620cb48100d493675c21f73b49785",
+   "target/classes/co/multiply/pathling/ScannerMatchesXf.class"
+   "73888f715bfc1672cd854d75bd2d2d53236dcfbb77cef0afd5657bcb4d59c6b8",
+   "target/classes/co/multiply/pathling/ScannerMatchesXf.java"
+   "29bea53e3876658b48d6b085a3738eb8d0c909f0212be34917bd08319e9b0809",
+   "target/classes/co/multiply/pathling/Transform.class"
+   "0e8f690432166f4dca92de08c185c5b4f247d8cda50add0f86dcf71017068b73",
+   "target/classes/co/multiply/pathling/Transform.java"
+   "c80935ceeed4a61a4f22c73b0db820ff798ae588e116d9ca9df947e3e4597cc5",
+   "target/classes/co/multiply/pathling/TransformKeys.class"
+   "9505459f92303e3e56774c03e713dae26534a3d3955004c53fd59222e94f6488",
+   "target/classes/co/multiply/pathling/TransformKeys.java"
+   "3866c00c25ed56a87355005f47ea6ce41d7d34507afc7db8338ea2a7a932424f",
+   "target/classes/co/multiply/pathling/accumulator.cljc"
+   "cd1befea4055988f43544e058aaf310b20bd464913fe4384e27f8ccee0cb7100",
+   "target/classes/co/multiply/pathling/helper.cljc"
+   "d03fde7646c911a9ca8dc08a51fb935e3797512cf22b8e0d0f52f6b43e1f799a",
+   "target/classes/co/multiply/pathling/impl.cljs"
+   "b824fbaebf38a586a339e81593629b0017074539c5b7c8f0972a151c34a474e8"},
+  :loaded-scanner
+  "file:/Users/henrik/clojure/pathling/target/classes/co/multiply/pathling/ScannerMatchesNav.class",
+  :libraries
+  {criterium/criterium #:mvn{:version "0.4.6"},
+   org.clojure/clojure #:mvn{:version "1.12.4"},
+   org.clojure/core.specs.alpha #:mvn{:version "0.4.74"},
+   org.clojure/spec.alpha #:mvn{:version "0.5.238"}},
+  :environment
+  {:criterium-resource
+   "jar:file:/Users/henrik/dotfiles/.m2/repository/criterium/criterium/0.4.6/criterium-0.4.6.jar!/criterium/core.clj",
+   :available-processors 10,
+   :max-heap-bytes 2147483648,
+   :jvm-options
+   ["-XX:-OmitStackTraceInFastThrow"
+    "-Xmx2g"
+    "-Xss8m"
+    "-Dclojure.basis=.cpcache/684322578.basis"],
+   :java
+   {"java.version" "26.0.2",
+    "java.vendor" "Amazon.com Inc.",
+    "java.vm.name" "OpenJDK 64-Bit Server VM",
+    "java.vm.version" "26.0.2+10-FR"},
+   :gc ["G1 Young Generation" "G1 Concurrent GC" "G1 Old Generation"],
+   :clojure-version "1.12.4",
+   :os
+   {"os.name" "Mac OS X", "os.arch" "aarch64", "os.version" "26.3.1"},
+   :cpu-model nil}},
+ :options
+ {:profile :full,
+  :suite :primary,
+  :seed 20260914,
+  :allocation-samples 5,
+  :fixtures [:small-one],
+  :output "benchmarks/results/initial-small-one-full",
+  :label "Initial full single-match reference"},
+ :validation :passed,
+ :fixture-version 1,
+ :finished-at "2026-09-14T08:53:54.390688Z",
+ :measurement-options
+ {:max-gc-attempts 100,
+  :samples 60,
+  :target-execution-time 1000000000,
+  :warmup-jit-period 10000000000,
+  :tail-quantile 0.025,
+  :bootstrap-size 1000},
+ :results
+ [{:id [:small-one :path-raw],
+   :fixture
+   {:id :small-one,
+    :shape :mixed,
+    :depth 3,
+    :breadth 3,
+    :match-count 1,
+    :seed 20260914,
+    :node-count 40,
+    :sha256
+    "dae001d66a2653fa204c6d7d1cfd07649ce610c4ad0a605cde344dbbaf8dd84c"},
+   :eligible-matches 1,
+   :validation :passed,
+   :timing
+   {:overhead 1.5666446662782609E-9,
+    :samples
+    [979490515
+     1002217931
+     1011022014
+     1010996723
+     997794265
+     999803056
+     1003163640
+     1003137515
+     1052248973
+     1081864514
+     1078550556
+     1047817598
+     1004812014
+     1003419765
+     1077306181
+     1060435723
+     995435682
+     995344514
+     1008088389
+     1008968182
+     1006393598
+     1007833932
+     1000674598
+     1002259015
+     998277973
+     1006617431
+     1010534473
+     1029853764
+     1007568556
+     1010567723
+     1034221765
+     1002997098
+     1000739265
+     995362348
+     996417889
+     999918098
+     1001248806
+     995704389
+     995384640
+     997407265
+     997414973
+     995107348
+     1004755723
+     1011408723
+     1003795848
+     995812556
+     994864557
+     997829765
+     995227431
+     996859931
+     996057764
+     997865598
+     998862056
+     997377348
+     1083827140
+     1004248514
+     1079783890
+     1006646848
+     991946473
+     1002241389],
+    :runtime-details
+    {:spec-vendor "Oracle Corporation",
+     :spec-name "Java Virtual Machine Specification",
+     :vm-version "26.0.2+10-FR",
+     :name "15645@Clavain.local",
+     :clojure-version-string "1.12.4",
+     :java-runtime-version "26.0.2+10-FR",
+     :java-version "26.0.2",
+     :vm-name "OpenJDK 64-Bit Server VM",
+     :vm-vendor "Amazon.com Inc.",
+     :clojure-version
+     {:major 1, :minor 12, :incremental 4, :qualifier nil},
+     :spec-version "26",
+     :sun-arch-data-model "64",
+     :input-arguments
+     ["-XX:-OmitStackTraceInFastThrow"
+      "-Xmx2g"
+      "-Xss8m"
+      "-Dclojure.basis=.cpcache/684322578.basis"]},
+    :mean
+    [3.624923087533099E-7
+     [3.604374271326118E-7 3.6502124877138115E-7]],
+    :final-gc-time 13872459,
+    :execution-count 2790057,
+    :variance
+    [8.499491284583133E-17
+     [4.5096048679911975E-17 1.3265895607608754E-16]],
+    :os-details
+    {:arch "aarch64",
+     :available-processors 10,
+     :name "Mac OS X",
+     :version "26.3.1"},
+    :tail-quantile 0.025,
+    :outlier-variance 0.12617600552515337,
+    :outliers
+    {:low-severe 0, :low-mild 0, :high-mild 2, :high-severe 8},
+    :warmup-time 10013022414,
+    :lower-q
+    [3.555291067530162E-7 [3.51064696886121E-7 3.5668245753581383E-7]],
+    :warmup-executions 27800628,
+    :sample-count 60,
+    :upper-q
+    [3.8740291599777355E-7
+     [3.818574341671156E-7 3.884605726693039E-7]],
+    :total-time 60.673834251,
+    :sample-variance [8.118405426273188E-17 [0.0 0.0]],
+    :options
+    {:max-gc-attempts 100,
+     :samples 60,
+     :target-execution-time 1000000000,
+     :warmup-jit-period 10000000000,
+     :tail-quantile 0.025,
+     :bootstrap-size 1000,
+     :overhead 1.5666446662782609E-9},
+    :sample-mean
+    [3.6244082857447E-7 [3.354101702701559E-7 3.894714868787842E-7]]},
+   :allocation
+   {:status :measured,
+    :method :thread-mx-bean,
+    :scope :current-thread,
+    :batch-iterations 100000,
+    :samples-bytes-per-call
+    [528.00136 528.00136 528.00136 528.00136 528.00136],
+    :mean-bytes-per-call 528.00136,
+    :control-bytes-per-call [0.00208 0.00136 0.00136 0.00136 0.00136],
+    :control-subtracted? false}}
+  {:id [:small-one :update-array-list],
+   :fixture
+   {:id :small-one,
+    :shape :mixed,
+    :depth 3,
+    :breadth 3,
+    :match-count 1,
+    :seed 20260914,
+    :node-count 40,
+    :sha256
+    "dae001d66a2653fa204c6d7d1cfd07649ce610c4ad0a605cde344dbbaf8dd84c"},
+   :eligible-matches 1,
+   :validation :passed,
+   :timing
+   {:overhead 1.5666446662782609E-9,
+    :samples
+    [996534561
+     1009973018
+     1013645102
+     993304685
+     984212311
+     990166935
+     993649477
+     1004162602
+     994825311
+     997792602
+     1006121436
+     1001097102
+     995527019
+     981991977
+     993497227
+     1055948144
+     1011100560
+     996218310
+     1032806477
+     989021894
+     986535852
+     987736602
+     987255102
+     996219727
+     997521935
+     994028852
+     980973977
+     989642018
+     1003058185
+     991150393
+     994453060
+     993487811
+     997541519
+     996741394
+     990822768
+     992574811
+     993156685
+     993256102
+     1006704394
+     994469060
+     1080875518
+     1037773518
+     1034912144
+     1007846519
+     991809727
+     1002748977
+     993366894
+     996590394
+     996142144
+     994646227
+     992118686
+     997279227
+     992334769
+     989321019
+     992541477
+     991261977
+     992156352
+     992679727
+     998076436
+     991983518],
+    :runtime-details
+    {:spec-vendor "Oracle Corporation",
+     :spec-name "Java Virtual Machine Specification",
+     :vm-version "26.0.2+10-FR",
+     :name "15645@Clavain.local",
+     :clojure-version-string "1.12.4",
+     :java-runtime-version "26.0.2+10-FR",
+     :java-version "26.0.2",
+     :vm-name "OpenJDK 64-Bit Server VM",
+     :vm-vendor "Amazon.com Inc.",
+     :clojure-version
+     {:major 1, :minor 12, :incremental 4, :qualifier nil},
+     :spec-version "26",
+     :sun-arch-data-model "64",
+     :input-arguments
+     ["-XX:-OmitStackTraceInFastThrow"
+      "-Xmx2g"
+      "-Xss8m"
+      "-Dclojure.basis=.cpcache/684322578.basis"]},
+    :mean
+    [1.792469169328281E-7 [1.786358086540376E-7 1.801370607559373E-7]],
+    :final-gc-time 10079709,
+    :execution-count 5576503,
+    :variance
+    [9.660265526054228E-18
+     [3.882452212429532E-18 2.1937685468225136E-17]],
+    :os-details
+    {:arch "aarch64",
+     :available-processors 10,
+     :name "Mac OS X",
+     :version "26.3.1"},
+    :tail-quantile 0.025,
+    :outlier-variance 0.0628171998281415,
+    :outliers
+    {:low-severe 0, :low-mild 0, :high-mild 2, :high-severe 5},
+    :warmup-time 10000846714,
+    :lower-q
+    [1.760945841865413E-7
+     [1.7591203250495875E-7 1.7690940935564816E-7]],
+    :warmup-executions 54663181,
+    :sample-count 60,
+    :upper-q
+    [1.8756486708605735E-7
+     [1.8335795146617872E-7 1.9382676168200752E-7]],
+    :total-time 59.975392247,
+    :sample-variance [9.342371088657063E-18 [0.0 0.0]],
+    :options
+    {:max-gc-attempts 100,
+     :samples 60,
+     :target-execution-time 1000000000,
+     :warmup-jit-period 10000000000,
+     :tail-quantile 0.025,
+     :bootstrap-size 1000,
+     :overhead 1.5666446662782609E-9},
+    :sample-mean
+    [1.792503062911171E-7
+     [1.7008071852514236E-7 1.8841989405709182E-7]]},
+   :allocation
+   {:status :measured,
+    :method :thread-mx-bean,
+    :scope :current-thread,
+    :batch-iterations 100000,
+    :samples-bytes-per-call
+    [576.00136 576.00136 576.00136 576.00136 576.00136],
+    :mean-bytes-per-call 576.00136,
+    :control-bytes-per-call [0.00136 0.00136 0.00136 0.00136 0.00136],
+    :control-subtracted? false}}
+  {:id [:small-one :raw-roundtrip],
+   :fixture
+   {:id :small-one,
+    :shape :mixed,
+    :depth 3,
+    :breadth 3,
+    :match-count 1,
+    :seed 20260914,
+    :node-count 40,
+    :sha256
+    "dae001d66a2653fa204c6d7d1cfd07649ce610c4ad0a605cde344dbbaf8dd84c"},
+   :eligible-matches 1,
+   :validation :passed,
+   :timing
+   {:overhead 1.5666446662782609E-9,
+    :samples
+    [987217203
+     995203495
+     995779744
+     993228327
+     991301411
+     1077087036
+     999104536
+     1005393536
+     1002736578
+     998620411
+     999921994
+     997250077
+     998759286
+     997195786
+     995278161
+     998486828
+     996732536
+     997686619
+     999959244
+     998496827
+     998745078
+     997042827
+     999126036
+     998226494
+     995177578
+     998786661
+     1086234369
+     1124681119
+     993487286
+     999646370
+     1001803370
+     998662036
+     1004449452
+     998604369
+     996474411
+     1003089870
+     997028203
+     998180120
+     997868994
+     991529911
+     997994619
+     997643786
+     996308661
+     999779827
+     1002951620
+     1003211077
+     1003052536
+     993859702
+     999789870
+     1002001369
+     1001658994
+     999404161
+     1016356494
+     1019484744
+     1022563578
+     1032918952
+     1010562786
+     1009231494
+     1008811911
+     1009117577],
+    :runtime-details
+    {:spec-vendor "Oracle Corporation",
+     :spec-name "Java Virtual Machine Specification",
+     :vm-version "26.0.2+10-FR",
+     :name "15645@Clavain.local",
+     :clojure-version-string "1.12.4",
+     :java-runtime-version "26.0.2+10-FR",
+     :java-version "26.0.2",
+     :vm-name "OpenJDK 64-Bit Server VM",
+     :vm-vendor "Amazon.com Inc.",
+     :clojure-version
+     {:major 1, :minor 12, :incremental 4, :qualifier nil},
+     :spec-version "26",
+     :sun-arch-data-model "64",
+     :input-arguments
+     ["-XX:-OmitStackTraceInFastThrow"
+      "-Xmx2g"
+      "-Xss8m"
+      "-Dclojure.basis=.cpcache/684322578.basis"]},
+    :mean
+    [6.44733195733464E-7 [6.419013452844376E-7 6.501357559563758E-7]],
+    :final-gc-time 15295959,
+    :execution-count 1560079,
+    :variance
+    [2.241037273710161E-16
+     [6.608118877668115E-17 5.926548741714947E-16]],
+    :os-details
+    {:arch "aarch64",
+     :available-processors 10,
+     :name "Mac OS X",
+     :version "26.3.1"},
+    :tail-quantile 0.025,
+    :outlier-variance 0.11009200607191695,
+    :outliers
+    {:low-severe 0, :low-mild 1, :high-mild 2, :high-severe 5},
+    :warmup-time 10006913300,
+    :lower-q
+    [6.354174442448108E-7 [6.327994947691752E-7 6.367314299628417E-7]],
+    :warmup-executions 15528856,
+    :sample-count 60,
+    :upper-q
+    [6.934837183405457E-7 [6.545188620896763E-7 7.209129274863646E-7]],
+    :total-time 60.330987947,
+    :sample-variance [2.1195309850635548E-16 [0.0 0.0]],
+    :options
+    {:max-gc-attempts 100,
+     :samples 60,
+     :target-execution-time 1000000000,
+     :warmup-jit-period 10000000000,
+     :tail-quantile 0.025,
+     :bootstrap-size 1000,
+     :overhead 1.5666446662782609E-9},
+    :sample-mean
+    [6.445291974209854E-7
+     [6.008533701642841E-7 6.882050246776865E-7]]},
+   :allocation
+   {:status :measured,
+    :method :thread-mx-bean,
+    :scope :current-thread,
+    :batch-iterations 100000,
+    :samples-bytes-per-call
+    [1200.00136 1200.00136 1200.00136 1200.00136 1200.00136],
+    :mean-bytes-per-call 1200.00136,
+    :control-bytes-per-call [0.00136 0.00136 0.00136 0.00136 0.00136],
+    :control-subtracted? false}}]}
