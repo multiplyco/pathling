@@ -1,5 +1,10 @@
 # JVM benchmarks
 
+Interpret results using the project's [implementation priorities](../README.md#implementation-priorities): execution
+time, allocation, and predictability matter together. Give particular attention to large structures with zero or few
+matches, checking whether allocated bytes grow with input size despite a fixed match count. A small retained result
+does not establish low temporary allocation, and timing alone does not capture all downstream GC effects.
+
 Run from the repository root:
 
 ```sh
@@ -99,6 +104,10 @@ hardware, and JVM flags for before/after comparisons.
 
 ### Comparison with postwalk
 
+The [2026-10-16 controlled comparison](comparisons/2026-10-16-postwalk/README.md)
+records all ten fixtures on the unreleased `b227ede` implementation: absolute times,
+allocated bytes, variation, paired comparisons and machine-readable results.
+
 The `:comparison` suite pairs `:find` with `:postwalk-find`, and `:transform` with
 `:postwalk-transform`, on the same ten deterministic fixtures as the primary suite.
 It covers scalar, small, sparse/dense mixed, wide-vector, deeply nested and hash-map
@@ -138,6 +147,12 @@ README table used a different input and measurement setup; it is not a controlle
 before/after reference for the current suite.
 
 ### Value-only discovery and staged collective updates
+
+The [2026-10-19 staged comparison](comparisons/2026-10-19-staged/README.md) is
+complete: all 300 full workers and 50 smoke checks passed. It reports separate
+collection/replacement timings and allocations, derived totals and every JVM
+observation. Measurements were restarted after the OS upgrade; the interrupted
+attempt and the earlier postwalk capture remain separate.
 
 The opt-in `:staged-comparison` suite uses the same ten primary inputs. It compares
 read-only discovery with `tree-seq`, then measures the first and last steps of

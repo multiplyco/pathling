@@ -1,0 +1,3025 @@
+{
+  "schema-version": 1,
+  "measured-date": "2026-10-16",
+  "release-status": "unreleased",
+  "library-commit": "b227ede820aefcea5d82198e31d72ea50185b9f7",
+  "support-commit": "0b3ca22cca900c8b2a74efd58b8906df4f289abb",
+  "provenance": "Measured as b227ede plus support patch; all 63 captured input files match support commit 0b3ca22.",
+  "environment": {
+    "cpu": "Intel Core i5-4590S (4 cores, 4 hardware threads)",
+    "ram-gib": 16,
+    "os": "Ubuntu 24.04.5 LTS",
+    "kernel": "6.8.0-139-generic",
+    "java": "Amazon Corretto 26.0.2+10-FR",
+    "clojure": "1.12.4",
+    "criterium": "0.4.6",
+    "jvm-options": [
+      "-Xmx2g",
+      "-Xss8m"
+    ]
+  },
+  "method": {
+    "seed": 20260914,
+    "profile": "full",
+    "fresh-jvms-per-implementation-per-case": 6,
+    "balanced-blocks": 3,
+    "full-workers": 240,
+    "smoke-workers": 40,
+    "samples-per-jvm": 60,
+    "minimum-warmup-seconds": 10,
+    "target-sample-seconds": 1,
+    "time-ratio": "postwalk / Pathling; ratio of median JVM means",
+    "allocation-ratio": "postwalk / Pathling; ratio of median allocated bytes per call; omitted below 1 byte/call",
+    "all-observations-retained": true
+  },
+  "validation": {
+    "tests": 113,
+    "assertions": 7589,
+    "failures": 0,
+    "full-workers": "passed",
+    "smoke-workers": "passed",
+    "captured-file-checks": 3397
+  },
+  "comparisons": [
+    {
+      "median-allocation-ratio": null,
+      "mean-time-ratio": 17.94825570310847,
+      "median-time-ratio": 17.743991059373382,
+      "pathling-mean-change-percent": -94.42842794006545,
+      "pathling-median-change-percent": -94.36428931544269,
+      "implementations": {
+        "postwalk": {
+          "means-us": [
+            0.07952297972588665,
+            0.07992186531888158,
+            0.08799680875943508,
+            0.08133775024677038,
+            0.08139657632394325,
+            0.07925782197013366
+          ],
+          "median-us": 0.08062980778282598,
+          "mean-us": 0.08157230039084178,
+          "min-us": 0.07925782197013366,
+          "max-us": 0.08799680875943508,
+          "allocation-bytes": [
+            480.00136000000003,
+            480.00136000000003,
+            480.00136000000003,
+            480.00136000000003,
+            480.00136000000003,
+            480.00136000000003
+          ],
+          "median-allocation-bytes": 480.00136000000003
+        },
+        "pathling": {
+          "means-us": [
+            0.004542883320806957,
+            0.004541407718359797,
+            0.00454181666462298,
+            0.004548828938039698,
+            0.004545242063502538,
+            0.004548978278000139
+          ],
+          "median-us": 0.004544062692154747,
+          "mean-us": 0.004544859497222018,
+          "min-us": 0.004541407718359797,
+          "max-us": 0.004548978278000139,
+          "allocation-bytes": [
+            0.00136,
+            0.00136,
+            0.00136,
+            0.00136,
+            0.00136,
+            0.00136
+          ],
+          "median-allocation-bytes": 0.00136
+        }
+      },
+      "case": [
+        "scalar-empty",
+        "find"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "postwalk": 0.07972242252238412,
+            "pathling": 0.004542145519583377
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "pathling": 0.004545322801331339,
+            "postwalk": 0.08466727950310274
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "postwalk": 0.08032719914703845,
+            "pathling": 0.0045471101707513385
+          }
+        }
+      ],
+      "fixture": {
+        "id": "scalar-empty",
+        "shape": "mixed",
+        "depth": 0,
+        "breadth": 1,
+        "match-count": 0,
+        "seed": 20260914,
+        "node-count": 1,
+        "sha256": "4e7f5b43f64b0350d43393120cc1303d5b17bf04e94c03be4c41a29e3842bded"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 2,
+          "postwalk-index": 1,
+          "pathling-us": 0.004542883320806957,
+          "postwalk-us": 0.07952297972588665,
+          "time-ratio": 17.504957558927774,
+          "pathling-change-percent": -94.28733262200922
+        },
+        {
+          "round": 2,
+          "pathling-index": 3,
+          "postwalk-index": 4,
+          "pathling-us": 0.004541407718359797,
+          "postwalk-us": 0.07992186531888158,
+          "time-ratio": 17.598478329918958,
+          "pathling-change-percent": -94.31769053407355
+        },
+        {
+          "round": 3,
+          "pathling-index": 81,
+          "postwalk-index": 82,
+          "pathling-us": 0.00454181666462298,
+          "postwalk-us": 0.08799680875943508,
+          "time-ratio": 19.37480423744488,
+          "pathling-change-percent": -94.8386575278663
+        },
+        {
+          "round": 4,
+          "pathling-index": 84,
+          "postwalk-index": 83,
+          "pathling-us": 0.004548828938039698,
+          "postwalk-us": 0.08133775024677038,
+          "time-ratio": 17.881030778401307,
+          "pathling-change-percent": -94.4074812442697
+        },
+        {
+          "round": 5,
+          "pathling-index": 162,
+          "postwalk-index": 161,
+          "pathling-us": 0.004545242063502538,
+          "postwalk-us": 0.08139657632394325,
+          "time-ratio": 17.908083923085826,
+          "pathling-change-percent": -94.41592967569873
+        },
+        {
+          "round": 6,
+          "pathling-index": 163,
+          "postwalk-index": 164,
+          "pathling-us": 0.004548978278000139,
+          "postwalk-us": 0.07925782197013366,
+          "time-ratio": 17.423213989269183,
+          "pathling-change-percent": -94.26053080323818
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": null,
+      "mean-time-ratio": 1.823392193757141,
+      "median-time-ratio": 1.6366283160410366,
+      "pathling-mean-change-percent": -45.1571634767462,
+      "pathling-median-change-percent": -38.89877193259278,
+      "implementations": {
+        "pathling": {
+          "means-us": [
+            0.009379802797758564,
+            0.008775324390722638,
+            0.009347147325816192,
+            0.007645613599572275,
+            0.009342034821282784,
+            0.007084689260356241
+          ],
+          "median-us": 0.00905867960600271,
+          "mean-us": 0.00859576869925145,
+          "min-us": 0.007084689260356241,
+          "max-us": 0.009379802797758564,
+          "allocation-bytes": [
+            0.00136,
+            0.00136,
+            0.00136,
+            0.00136,
+            0.00136,
+            0.00136
+          ],
+          "median-allocation-bytes": 0.00136
+        },
+        "postwalk": {
+          "means-us": [
+            0.014679396403906933,
+            0.014971986694348061,
+            0.01441819776577116,
+            0.020513047580782567,
+            0.015023996788019515,
+            0.014434120040514154
+          ],
+          "median-us": 0.014825691549127497,
+          "mean-us": 0.015673457545557067,
+          "min-us": 0.01441819776577116,
+          "max-us": 0.020513047580782567,
+          "allocation-bytes": [
+            40.00136,
+            40.00136,
+            40.00136,
+            40.00136,
+            40.00136,
+            40.00136
+          ],
+          "median-allocation-bytes": 40.00136
+        }
+      },
+      "case": [
+        "scalar-empty",
+        "transform"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "pathling": 0.009077563594240601,
+            "postwalk": 0.014825691549127497
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "postwalk": 0.017465622673276865,
+            "pathling": 0.008496380462694233
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "pathling": 0.008213362040819513,
+            "postwalk": 0.014729058414266836
+          }
+        }
+      ],
+      "fixture": {
+        "id": "scalar-empty",
+        "shape": "mixed",
+        "depth": 0,
+        "breadth": 1,
+        "match-count": 0,
+        "seed": 20260914,
+        "node-count": 1,
+        "sha256": "4e7f5b43f64b0350d43393120cc1303d5b17bf04e94c03be4c41a29e3842bded"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 5,
+          "postwalk-index": 6,
+          "pathling-us": 0.009379802797758564,
+          "postwalk-us": 0.014679396403906933,
+          "time-ratio": 1.5650005357697694,
+          "pathling-change-percent": -36.10225829679127
+        },
+        {
+          "round": 2,
+          "pathling-index": 8,
+          "postwalk-index": 7,
+          "pathling-us": 0.008775324390722638,
+          "postwalk-us": 0.014971986694348061,
+          "time-ratio": 1.7061462377592103,
+          "pathling-change-percent": -41.388377041269145
+        },
+        {
+          "round": 3,
+          "pathling-index": 86,
+          "postwalk-index": 85,
+          "pathling-us": 0.009347147325816192,
+          "postwalk-us": 0.01441819776577116,
+          "time-ratio": 1.5425238592259125,
+          "pathling-change-percent": -35.171181047284946
+        },
+        {
+          "round": 4,
+          "pathling-index": 87,
+          "postwalk-index": 88,
+          "pathling-us": 0.007645613599572275,
+          "postwalk-us": 0.020513047580782567,
+          "time-ratio": 2.6829825119504007,
+          "pathling-change-percent": -62.72804628633052
+        },
+        {
+          "round": 5,
+          "pathling-index": 165,
+          "postwalk-index": 166,
+          "pathling-us": 0.009342034821282784,
+          "postwalk-us": 0.015023996788019515,
+          "time-ratio": 1.608214599435257,
+          "pathling-change-percent": -37.819243753217926
+        },
+        {
+          "round": 6,
+          "pathling-index": 168,
+          "postwalk-index": 167,
+          "pathling-us": 0.007084689260356241,
+          "postwalk-us": 0.014434120040514154,
+          "time-ratio": 2.0373681201916765,
+          "pathling-change-percent": -50.91706844289291
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": 8.249845940773758,
+      "mean-time-ratio": 10.125313594217324,
+      "median-time-ratio": 9.987494473517147,
+      "pathling-mean-change-percent": -90.12376267959631,
+      "pathling-median-change-percent": -89.98747881511623,
+      "implementations": {
+        "pathling": {
+          "means-us": [
+            0.010476517864444007,
+            0.00962719649465943,
+            0.011204627693942454,
+            0.01122811552166952,
+            0.010618126631148339,
+            0.010909732402801166
+          ],
+          "median-us": 0.010763929516974753,
+          "mean-us": 0.010677386101444154,
+          "min-us": 0.00962719649465943,
+          "max-us": 0.01122811552166952,
+          "allocation-bytes": [
+            64.00136,
+            64.00136,
+            64.00136,
+            64.00136,
+            64.00136,
+            64.00136
+          ],
+          "median-allocation-bytes": 64.00136
+        },
+        "postwalk": {
+          "means-us": [
+            0.10625911558885011,
+            0.11054704147222112,
+            0.10643739446633495,
+            0.11041837120632463,
+            0.10757717964185873,
+            0.10743219348636816
+          ],
+          "median-us": 0.10750468656411344,
+          "mean-us": 0.10811188264365962,
+          "min-us": 0.10625911558885011,
+          "max-us": 0.11054704147222112,
+          "allocation-bytes": [
+            528.00136,
+            528.00136,
+            528.00136,
+            528.00136,
+            528.00136,
+            528.00136
+          ],
+          "median-allocation-bytes": 528.00136
+        }
+      },
+      "case": [
+        "scalar-one",
+        "find"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "pathling": 0.010051857179551718,
+            "postwalk": 0.10840307853053562
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "postwalk": 0.10842788283632979,
+            "pathling": 0.011216371607805987
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "pathling": 0.010763929516974753,
+            "postwalk": 0.10750468656411344
+          }
+        }
+      ],
+      "fixture": {
+        "id": "scalar-one",
+        "shape": "mixed",
+        "depth": 0,
+        "breadth": 1,
+        "match-count": 1,
+        "seed": 20260914,
+        "node-count": 1,
+        "sha256": "d9165a6d599c403fe354ff4787accc1acf0a4ed548bdc9c3a0486e47175ca165"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 9,
+          "postwalk-index": 10,
+          "pathling-us": 0.010476517864444007,
+          "postwalk-us": 0.10625911558885011,
+          "time-ratio": 10.142598615660292,
+          "pathling-change-percent": -90.14059376799169
+        },
+        {
+          "round": 2,
+          "pathling-index": 12,
+          "postwalk-index": 11,
+          "pathling-us": 0.00962719649465943,
+          "postwalk-us": 0.11054704147222112,
+          "time-ratio": 11.482786451231751,
+          "pathling-change-percent": -91.29131239837061
+        },
+        {
+          "round": 3,
+          "pathling-index": 90,
+          "postwalk-index": 89,
+          "pathling-us": 0.011204627693942454,
+          "postwalk-us": 0.10643739446633495,
+          "time-ratio": 9.499413757752798,
+          "pathling-change-percent": -89.47303459454152
+        },
+        {
+          "round": 4,
+          "pathling-index": 91,
+          "postwalk-index": 92,
+          "pathling-us": 0.01122811552166952,
+          "postwalk-us": 0.11041837120632463,
+          "time-ratio": 9.834096469102448,
+          "pathling-change-percent": -89.83129763733882
+        },
+        {
+          "round": 5,
+          "pathling-index": 169,
+          "postwalk-index": 170,
+          "pathling-us": 0.010618126631148339,
+          "postwalk-us": 0.10757717964185873,
+          "time-ratio": 10.131465123638705,
+          "pathling-change-percent": -90.12975924215736
+        },
+        {
+          "round": 6,
+          "pathling-index": 172,
+          "postwalk-index": 171,
+          "pathling-us": 0.010909732402801166,
+          "postwalk-us": 0.10743219348636816,
+          "time-ratio": 9.847372008756516,
+          "pathling-change-percent": -89.84500637214907
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": null,
+      "mean-time-ratio": 1.6717522040380526,
+      "median-time-ratio": 1.5412028456950806,
+      "pathling-mean-change-percent": -40.18252241064562,
+      "pathling-median-change-percent": -35.11561422344759,
+      "implementations": {
+        "postwalk": {
+          "means-us": [
+            0.016970987913867162,
+            0.016674636109089962,
+            0.016647912583253217,
+            0.016664974187303387,
+            0.016970085555947003,
+            0.022138359013364684
+          ],
+          "median-us": 0.016822360832518483,
+          "mean-us": 0.017677825893804237,
+          "min-us": 0.016647912583253217,
+          "max-us": 0.022138359013364684,
+          "allocation-bytes": [
+            40.00136,
+            40.00136,
+            40.00136,
+            40.00136,
+            40.00136,
+            40.00136
+          ],
+          "median-allocation-bytes": 40.00136
+        },
+        "pathling": {
+          "means-us": [
+            0.011040807228359994,
+            0.011032152864728681,
+            0.010752462448954104,
+            0.011045964145512167,
+            0.008777172432452449,
+            0.010798018133861215
+          ],
+          "median-us": 0.010915085499294947,
+          "mean-us": 0.010574429542311435,
+          "min-us": 0.008777172432452449,
+          "max-us": 0.011045964145512167,
+          "allocation-bytes": [
+            0.00136,
+            0.00136,
+            0.00136,
+            0.00136,
+            0.00136,
+            0.7942560000000001
+          ],
+          "median-allocation-bytes": 0.00136
+        }
+      },
+      "case": [
+        "scalar-one",
+        "transform"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "postwalk": 0.01682281201147856,
+            "pathling": 0.011036480046544337
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "pathling": 0.010899213297233135,
+            "postwalk": 0.016656443385278302
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "postwalk": 0.019554222284655844,
+            "pathling": 0.009787595283156831
+          }
+        }
+      ],
+      "fixture": {
+        "id": "scalar-one",
+        "shape": "mixed",
+        "depth": 0,
+        "breadth": 1,
+        "match-count": 1,
+        "seed": 20260914,
+        "node-count": 1,
+        "sha256": "d9165a6d599c403fe354ff4787accc1acf0a4ed548bdc9c3a0486e47175ca165"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 14,
+          "postwalk-index": 13,
+          "pathling-us": 0.011040807228359994,
+          "postwalk-us": 0.016970987913867162,
+          "time-ratio": 1.5371147745678049,
+          "pathling-change-percent": -34.943049371106795
+        },
+        {
+          "round": 2,
+          "pathling-index": 15,
+          "postwalk-index": 16,
+          "pathling-us": 0.011032152864728681,
+          "postwalk-us": 0.016674636109089962,
+          "time-ratio": 1.511458036663096,
+          "pathling-change-percent": -33.838718922839675
+        },
+        {
+          "round": 3,
+          "pathling-index": 93,
+          "postwalk-index": 94,
+          "pathling-us": 0.010752462448954104,
+          "postwalk-us": 0.016647912583253217,
+          "time-ratio": 1.548288372294903,
+          "pathling-change-percent": -35.41254859921344
+        },
+        {
+          "round": 4,
+          "pathling-index": 96,
+          "postwalk-index": 95,
+          "pathling-us": 0.011045964145512167,
+          "postwalk-us": 0.016664974187303387,
+          "time-ratio": 1.508693489112415,
+          "pathling-change-percent": -33.71748421952072
+        },
+        {
+          "round": 5,
+          "pathling-index": 174,
+          "postwalk-index": 173,
+          "pathling-us": 0.008777172432452449,
+          "postwalk-us": 0.016970085555947003,
+          "time-ratio": 1.9334342223017436,
+          "pathling-change-percent": -48.278561097904586
+        },
+        {
+          "round": 6,
+          "pathling-index": 175,
+          "postwalk-index": 176,
+          "pathling-us": 0.010798018133861215,
+          "postwalk-us": 0.022138359013364684,
+          "time-ratio": 2.0502242855049113,
+          "pathling-change-percent": -51.22484856559346
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": 594.2997130162624,
+      "mean-time-ratio": 21.2739344583281,
+      "median-time-ratio": 21.265667941327123,
+      "pathling-mean-change-percent": -95.29941204830341,
+      "pathling-median-change-percent": -95.29758480778011,
+      "implementations": {
+        "postwalk": {
+          "means-us": [
+            9.449216303873046,
+            9.869840917644364,
+            9.476911098774766,
+            9.394150123294734,
+            9.824985860227688,
+            9.88878935841709
+          ],
+          "median-us": 9.650948479501228,
+          "mean-us": 9.650648943705281,
+          "min-us": 9.394150123294734,
+          "max-us": 9.88878935841709,
+          "allocation-bytes": [
+            14264.00136,
+            14256.00136,
+            14264.00136,
+            14232.00136,
+            14288.00136,
+            14288.00136
+          ],
+          "median-allocation-bytes": 14264.00136
+        },
+        "pathling": {
+          "means-us": [
+            0.4522564842934176,
+            0.4494165147736389,
+            0.460065873967342,
+            0.446683977639026,
+            0.4580017476833024,
+            0.45539885069334163
+          ],
+          "median-us": 0.4538276674933796,
+          "mean-us": 0.4536372415083447,
+          "min-us": 0.446683977639026,
+          "max-us": 0.460065873967342,
+          "allocation-bytes": [
+            24.00136,
+            24.00136,
+            24.00136,
+            24.00136,
+            24.00136,
+            24.001472
+          ],
+          "median-allocation-bytes": 24.00136
+        }
+      },
+      "case": [
+        "small-empty",
+        "find"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "postwalk": 9.659528610758706,
+            "pathling": 0.4508364995335282
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "pathling": 0.453374925803184,
+            "postwalk": 9.43553061103475
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "postwalk": 9.856887609322388,
+            "pathling": 0.456700299188322
+          }
+        }
+      ],
+      "fixture": {
+        "id": "small-empty",
+        "shape": "mixed",
+        "depth": 3,
+        "breadth": 3,
+        "match-count": 0,
+        "seed": 20260914,
+        "node-count": 40,
+        "sha256": "ebbc512f74d01aecdabb1286c6bb1971aeb3013c558754edc289e02238132a79"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 18,
+          "postwalk-index": 17,
+          "pathling-us": 0.4522564842934176,
+          "postwalk-us": 9.449216303873046,
+          "time-ratio": 20.893489937764006,
+          "pathling-change-percent": -95.21382017566846
+        },
+        {
+          "round": 2,
+          "pathling-index": 19,
+          "postwalk-index": 20,
+          "pathling-us": 0.4494165147736389,
+          "postwalk-us": 9.869840917644364,
+          "time-ratio": 21.961455783652237,
+          "pathling-change-percent": -95.4465677965466
+        },
+        {
+          "round": 3,
+          "pathling-index": 97,
+          "postwalk-index": 98,
+          "pathling-us": 0.460065873967342,
+          "postwalk-us": 9.476911098774766,
+          "time-ratio": 20.599030780204075,
+          "pathling-change-percent": -95.14540266156108
+        },
+        {
+          "round": 4,
+          "pathling-index": 100,
+          "postwalk-index": 99,
+          "pathling-us": 0.446683977639026,
+          "postwalk-us": 9.394150123294734,
+          "time-ratio": 21.03086431026261,
+          "pathling-change-percent": -95.24508367679391
+        },
+        {
+          "round": 5,
+          "pathling-index": 178,
+          "postwalk-index": 177,
+          "pathling-us": 0.4580017476833024,
+          "postwalk-us": 9.824985860227688,
+          "time-ratio": 21.45185233446192,
+          "pathling-change-percent": -95.33839789492899
+        },
+        {
+          "round": 6,
+          "pathling-index": 179,
+          "postwalk-index": 180,
+          "pathling-us": 0.45539885069334163,
+          "postwalk-us": 9.88878935841709,
+          "time-ratio": 21.714568105214752,
+          "pathling-change-percent": -95.39479673206188
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": null,
+      "mean-time-ratio": 18.904484511702734,
+      "median-time-ratio": 18.95642358370488,
+      "pathling-mean-change-percent": -94.71024983843937,
+      "pathling-median-change-percent": -94.72474332732462,
+      "implementations": {
+        "pathling": {
+          "means-us": [
+            0.5161386542519673,
+            0.5156182947664515,
+            0.4998717045486493,
+            0.5046599642768512,
+            0.5047016594759114,
+            0.5067990427734228
+          ],
+          "median-us": 0.505750351124667,
+          "mean-us": 0.5079648866822088,
+          "min-us": 0.4998717045486493,
+          "max-us": 0.5161386542519673,
+          "allocation-bytes": [
+            0.00136,
+            0.00136,
+            0.00136,
+            0.00136,
+            0.00136,
+            0.00136
+          ],
+          "median-allocation-bytes": 0.00136
+        },
+        "postwalk": {
+          "means-us": [
+            9.84938625173558,
+            9.646141233728834,
+            9.528294533324493,
+            9.421767531313739,
+            9.496687452071095,
+            9.674608994462165
+          ],
+          "median-us": 9.587217883526662,
+          "mean-us": 9.60281433277265,
+          "min-us": 9.421767531313739,
+          "max-us": 9.84938625173558,
+          "allocation-bytes": [
+            13848.00136,
+            13848.00136,
+            13848.00136,
+            13848.00136,
+            13848.00136,
+            13848.00136
+          ],
+          "median-allocation-bytes": 13848.00136
+        }
+      },
+      "case": [
+        "small-empty",
+        "transform"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "pathling": 0.5158784745092093,
+            "postwalk": 9.747763742732207
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "postwalk": 9.475031032319116,
+            "pathling": 0.5022658344127503
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "pathling": 0.505750351124667,
+            "postwalk": 9.585648223266631
+          }
+        }
+      ],
+      "fixture": {
+        "id": "small-empty",
+        "shape": "mixed",
+        "depth": 3,
+        "breadth": 3,
+        "match-count": 0,
+        "seed": 20260914,
+        "node-count": 40,
+        "sha256": "ebbc512f74d01aecdabb1286c6bb1971aeb3013c558754edc289e02238132a79"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 21,
+          "postwalk-index": 22,
+          "pathling-us": 0.5161386542519673,
+          "postwalk-us": 9.84938625173558,
+          "time-ratio": 19.082830108917463,
+          "pathling-change-percent": -94.75968714130774
+        },
+        {
+          "round": 2,
+          "pathling-index": 24,
+          "postwalk-index": 23,
+          "pathling-us": 0.5156182947664515,
+          "postwalk-us": 9.646141233728834,
+          "time-ratio": 18.7079111265787,
+          "pathling-change-percent": -94.65466778608285
+        },
+        {
+          "round": 3,
+          "pathling-index": 102,
+          "postwalk-index": 101,
+          "pathling-us": 0.4998717045486493,
+          "postwalk-us": 9.528294533324493,
+          "time-ratio": 19.06148006902672,
+          "pathling-change-percent": -94.75381766589618
+        },
+        {
+          "round": 4,
+          "pathling-index": 103,
+          "postwalk-index": 104,
+          "pathling-us": 0.5046599642768512,
+          "postwalk-us": 9.421767531313739,
+          "time-ratio": 18.669536318012845,
+          "pathling-change-percent": -94.64368057692373
+        },
+        {
+          "round": 5,
+          "pathling-index": 181,
+          "postwalk-index": 182,
+          "pathling-us": 0.5047016594759114,
+          "postwalk-us": 9.496687452071095,
+          "time-ratio": 18.81643793668635,
+          "pathling-change-percent": -94.68549784308377
+        },
+        {
+          "round": 6,
+          "pathling-index": 184,
+          "postwalk-index": 183,
+          "pathling-us": 0.5067990427734228,
+          "postwalk-us": 9.674608994462165,
+          "time-ratio": 19.08963549244003,
+          "pathling-change-percent": -94.76155529320597
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": 99.55462476187725,
+      "mean-time-ratio": 19.001661153118967,
+      "median-time-ratio": 19.09160024525455,
+      "pathling-mean-change-percent": -94.73730221825444,
+      "pathling-median-change-percent": -94.7620943914926,
+      "implementations": {
+        "pathling": {
+          "means-us": [
+            0.5193865185011859,
+            0.5212496668833662,
+            0.5171882639579668,
+            0.5185165506935396,
+            0.5159006269047863,
+            0.5154312756405148
+          ],
+          "median-us": 0.5178524073257532,
+          "mean-us": 0.5179454837635599,
+          "min-us": 0.5154312756405148,
+          "max-us": 0.5212496668833662,
+          "allocation-bytes": [
+            144.00136,
+            144.00136,
+            144.00136,
+            144.00136,
+            144.00136,
+            144.00136
+          ],
+          "median-allocation-bytes": 144.00136
+        },
+        "postwalk": {
+          "means-us": [
+            10.026476319338562,
+            9.89177710655409,
+            9.881485186857928,
+            9.55555215207989,
+            9.795874631390987,
+            9.899782073359226
+          ],
+          "median-us": 9.886631146706009,
+          "mean-us": 9.841824578263447,
+          "min-us": 9.55555215207989,
+          "max-us": 10.026476319338562,
+          "allocation-bytes": [
+            14336.00136,
+            14336.00136,
+            14336.00136,
+            14336.00136,
+            14336.00136,
+            14336.00136
+          ],
+          "median-allocation-bytes": 14336.00136
+        }
+      },
+      "case": [
+        "small-one",
+        "find"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "pathling": 0.520318092692276,
+            "postwalk": 9.959126712946325
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "postwalk": 9.71851866946891,
+            "pathling": 0.5178524073257532
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "pathling": 0.5156659512726506,
+            "postwalk": 9.847828352375107
+          }
+        }
+      ],
+      "fixture": {
+        "id": "small-one",
+        "shape": "mixed",
+        "depth": 3,
+        "breadth": 3,
+        "match-count": 1,
+        "seed": 20260914,
+        "node-count": 40,
+        "sha256": "dae001d66a2653fa204c6d7d1cfd07649ce610c4ad0a605cde344dbbaf8dd84c"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 25,
+          "postwalk-index": 26,
+          "pathling-us": 0.5193865185011859,
+          "postwalk-us": 10.026476319338562,
+          "time-ratio": 19.30446009317369,
+          "pathling-change-percent": -94.81984994569409
+        },
+        {
+          "round": 2,
+          "pathling-index": 28,
+          "postwalk-index": 27,
+          "pathling-us": 0.5212496668833662,
+          "postwalk-us": 9.89177710655409,
+          "time-ratio": 18.977042547957073,
+          "pathling-change-percent": -94.73047500698335
+        },
+        {
+          "round": 3,
+          "pathling-index": 106,
+          "postwalk-index": 105,
+          "pathling-us": 0.5171882639579668,
+          "postwalk-us": 9.881485186857928,
+          "time-ratio": 19.106166700760674,
+          "pathling-change-percent": -94.76608774715555
+        },
+        {
+          "round": 4,
+          "pathling-index": 107,
+          "postwalk-index": 108,
+          "pathling-us": 0.5185165506935396,
+          "postwalk-us": 9.55555215207989,
+          "time-ratio": 18.428634803072153,
+          "pathling-change-percent": -94.57366207162946
+        },
+        {
+          "round": 5,
+          "pathling-index": 185,
+          "postwalk-index": 186,
+          "pathling-us": 0.5159006269047863,
+          "postwalk-us": 9.795874631390987,
+          "time-ratio": 18.987909920099586,
+          "pathling-change-percent": -94.73349092023312
+        },
+        {
+          "round": 6,
+          "pathling-index": 188,
+          "postwalk-index": 187,
+          "pathling-us": 0.5154312756405148,
+          "postwalk-us": 9.899782073359226,
+          "time-ratio": 19.20679349745898,
+          "pathling-change-percent": -94.79350886897234
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": 14.188506212737245,
+      "mean-time-ratio": 11.033058871534209,
+      "median-time-ratio": 11.070961168214522,
+      "pathling-mean-change-percent": -90.9363304261881,
+      "pathling-median-change-percent": -90.96736060396393,
+      "implementations": {
+        "postwalk": {
+          "means-us": [
+            9.759861740807859,
+            9.675147995556028,
+            9.602530855866645,
+            9.900501585015832,
+            9.906923275377192,
+            10.003169454635483
+          ],
+          "median-us": 9.830181662911844,
+          "mean-us": 9.808022484543173,
+          "min-us": 9.602530855866645,
+          "max-us": 10.003169454635483,
+          "allocation-bytes": [
+            13848.00136,
+            13848.00136,
+            13848.00136,
+            13848.00136,
+            13848.00136,
+            13848.00136
+          ],
+          "median-allocation-bytes": 13848.00136
+        },
+        "pathling": {
+          "means-us": [
+            0.8763198907834241,
+            0.8964694439195654,
+            0.910421383879301,
+            0.8747400565905471,
+            0.8805472291934473,
+            0.8953024939787303
+          ],
+          "median-us": 0.8879248615860889,
+          "mean-us": 0.888966749724169,
+          "min-us": 0.8747400565905471,
+          "max-us": 0.910421383879301,
+          "allocation-bytes": [
+            952.00136,
+            976.00136,
+            976.00136,
+            952.00136,
+            976.00136,
+            976.00136
+          ],
+          "median-allocation-bytes": 976.00136
+        }
+      },
+      "case": [
+        "small-one",
+        "transform"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "postwalk": 9.717504868181944,
+            "pathling": 0.8863946673514947
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "pathling": 0.8925807202349241,
+            "postwalk": 9.75151622044124
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "postwalk": 9.955046365006337,
+            "pathling": 0.8879248615860889
+          }
+        }
+      ],
+      "fixture": {
+        "id": "small-one",
+        "shape": "mixed",
+        "depth": 3,
+        "breadth": 3,
+        "match-count": 1,
+        "seed": 20260914,
+        "node-count": 40,
+        "sha256": "dae001d66a2653fa204c6d7d1cfd07649ce610c4ad0a605cde344dbbaf8dd84c"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 30,
+          "postwalk-index": 29,
+          "pathling-us": 0.8763198907834241,
+          "postwalk-us": 9.759861740807859,
+          "time-ratio": 11.13732763966205,
+          "pathling-change-percent": -91.02118540143492
+        },
+        {
+          "round": 2,
+          "pathling-index": 31,
+          "postwalk-index": 32,
+          "pathling-us": 0.8964694439195654,
+          "postwalk-us": 9.675147995556028,
+          "time-ratio": 10.792501697831565,
+          "pathling-change-percent": -90.73430768881954
+        },
+        {
+          "round": 3,
+          "pathling-index": 109,
+          "postwalk-index": 110,
+          "pathling-us": 0.910421383879301,
+          "postwalk-us": 9.602530855866645,
+          "time-ratio": 10.547347663287859,
+          "pathling-change-percent": -90.5189434166402
+        },
+        {
+          "round": 4,
+          "pathling-index": 112,
+          "postwalk-index": 111,
+          "pathling-us": 0.8747400565905471,
+          "postwalk-us": 9.900501585015832,
+          "time-ratio": 11.31822135092884,
+          "pathling-change-percent": -91.1646894949803
+        },
+        {
+          "round": 5,
+          "pathling-index": 190,
+          "postwalk-index": 189,
+          "pathling-us": 0.8805472291934473,
+          "postwalk-us": 9.906923275377192,
+          "time-ratio": 11.250870989000344,
+          "pathling-change-percent": -91.11179924667458
+        },
+        {
+          "round": 6,
+          "pathling-index": 191,
+          "postwalk-index": 192,
+          "pathling-us": 0.8953024939787303,
+          "postwalk-us": 10.003169454635483,
+          "time-ratio": 11.172949390748741,
+          "pathling-change-percent": -91.04981178176637
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": 24.725972241957255,
+      "mean-time-ratio": 16.179727617824213,
+      "median-time-ratio": 16.241691021070928,
+      "pathling-mean-change-percent": -93.81942623744567,
+      "pathling-median-change-percent": -93.84300564083713,
+      "implementations": {
+        "postwalk": {
+          "means-us": [
+            10.434021818210109,
+            10.489289931939345,
+            10.589470758957598,
+            10.554402525519277,
+            10.405097331902645,
+            10.343980013202817
+          ],
+          "median-us": 10.461655875074726,
+          "mean-us": 10.469377063288631,
+          "min-us": 10.343980013202817,
+          "max-us": 10.589470758957598,
+          "allocation-bytes": [
+            14440.001410671312,
+            14440.00142257926,
+            14440.001433918496,
+            14440.00143661466,
+            14440.001403175716,
+            14440.00140279941
+          ],
+          "median-allocation-bytes": 14440.001416625286
+        },
+        "pathling": {
+          "means-us": [
+            0.6393566147030816,
+            0.6454433217100669,
+            0.6488068585343619,
+            0.6406604728392503,
+            0.6653343609755303,
+            0.6428038024966978
+          ],
+          "median-us": 0.6441235621033823,
+          "mean-us": 0.6470675718764981,
+          "min-us": 0.6393566147030816,
+          "max-us": 0.6653343609755303,
+          "allocation-bytes": [
+            584.00136,
+            584.00136,
+            584.00136,
+            584.00136,
+            584.00136,
+            584.00136
+          ],
+          "median-allocation-bytes": 584.00136
+        }
+      },
+      "case": [
+        "small-many",
+        "find"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "postwalk": 10.461655875074726,
+            "pathling": 0.6423999682065742
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "pathling": 0.6447336656868061,
+            "postwalk": 10.571936642238438
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "postwalk": 10.374538672552731,
+            "pathling": 0.6540690817361141
+          }
+        }
+      ],
+      "fixture": {
+        "id": "small-many",
+        "shape": "mixed",
+        "depth": 3,
+        "breadth": 3,
+        "match-count": 27,
+        "seed": 20260914,
+        "node-count": 40,
+        "sha256": "b97787b94e2cff1825cee506177c705fb6de7bd719236e8f6e9f83b9a4f3e59c"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 34,
+          "postwalk-index": 33,
+          "pathling-us": 0.6393566147030816,
+          "postwalk-us": 10.434021818210109,
+          "time-ratio": 16.31956497870236,
+          "pathling-change-percent": -93.87238568365616
+        },
+        {
+          "round": 2,
+          "pathling-index": 35,
+          "postwalk-index": 36,
+          "pathling-us": 0.6454433217100669,
+          "postwalk-us": 10.489289931939345,
+          "time-ratio": 16.251295162755024,
+          "pathling-change-percent": -93.84664428290111
+        },
+        {
+          "round": 3,
+          "pathling-index": 113,
+          "postwalk-index": 114,
+          "pathling-us": 0.6488068585343619,
+          "postwalk-us": 10.589470758957598,
+          "time-ratio": 16.321453171563167,
+          "pathling-change-percent": -93.87309457381959
+        },
+        {
+          "round": 4,
+          "pathling-index": 116,
+          "postwalk-index": 115,
+          "pathling-us": 0.6406604728392503,
+          "postwalk-us": 10.554402525519277,
+          "time-ratio": 16.474252701660756,
+          "pathling-change-percent": -93.92992193267018
+        },
+        {
+          "round": 5,
+          "pathling-index": 194,
+          "postwalk-index": 193,
+          "pathling-us": 0.6653343609755303,
+          "postwalk-us": 10.405097331902645,
+          "time-ratio": 15.638899690445003,
+          "pathling-change-percent": -93.60568825304905
+        },
+        {
+          "round": 6,
+          "pathling-index": 195,
+          "postwalk-index": 196,
+          "pathling-us": 0.6428038024966978,
+          "postwalk-us": 10.343980013202817,
+          "time-ratio": 16.09197078957223,
+          "pathling-change-percent": -93.78572076051735
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": 2.3615276514874477,
+      "mean-time-ratio": 2.985295756750509,
+      "median-time-ratio": 2.9620516592077015,
+      "pathling-mean-change-percent": -66.50248144631075,
+      "pathling-median-change-percent": -66.23961648705739,
+      "implementations": {
+        "pathling": {
+          "means-us": [
+            3.4141731508502144,
+            3.44285428351257,
+            3.336930336415688,
+            3.2963701497558775,
+            3.0633120213356735,
+            3.338431137086843
+          ],
+          "median-us": 3.3376807367512655,
+          "mean-us": 3.315345179826144,
+          "min-us": 3.0633120213356735,
+          "max-us": 3.44285428351257,
+          "allocation-bytes": [
+            5864.00136,
+            5864.00136,
+            5864.00136,
+            5864.00136,
+            5744.00136,
+            5864.00136
+          ],
+          "median-allocation-bytes": 5864.00136
+        },
+        "postwalk": {
+          "means-us": [
+            9.905701997559781,
+            10.011917158666678,
+            9.642622650182886,
+            10.099126135996187,
+            9.867063530839557,
+            9.857283911744352
+          ],
+          "median-us": 9.88638276419967,
+          "mean-us": 9.897285897498241,
+          "min-us": 9.642622650182886,
+          "max-us": 10.099126135996187,
+          "allocation-bytes": [
+            13848.00136,
+            13848.00136,
+            13848.00136,
+            13848.001360095204,
+            13848.00136,
+            13848.00136
+          ],
+          "median-allocation-bytes": 13848.00136
+        }
+      },
+      "case": [
+        "small-many",
+        "transform"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "pathling": 3.428513717181392,
+            "postwalk": 9.958809578113229
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "postwalk": 9.870874393089537,
+            "pathling": 3.3166502430857827
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "pathling": 3.2008715792112583,
+            "postwalk": 9.862173721291954
+          }
+        }
+      ],
+      "fixture": {
+        "id": "small-many",
+        "shape": "mixed",
+        "depth": 3,
+        "breadth": 3,
+        "match-count": 27,
+        "seed": 20260914,
+        "node-count": 40,
+        "sha256": "b97787b94e2cff1825cee506177c705fb6de7bd719236e8f6e9f83b9a4f3e59c"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 37,
+          "postwalk-index": 38,
+          "pathling-us": 3.4141731508502144,
+          "postwalk-us": 9.905701997559781,
+          "time-ratio": 2.9013472837758725,
+          "pathling-change-percent": -65.5332539612914
+        },
+        {
+          "round": 2,
+          "pathling-index": 40,
+          "postwalk-index": 39,
+          "pathling-us": 3.44285428351257,
+          "postwalk-us": 10.011917158666678,
+          "time-ratio": 2.9080281458941175,
+          "pathling-change-percent": -65.61243736887783
+        },
+        {
+          "round": 3,
+          "pathling-index": 118,
+          "postwalk-index": 117,
+          "pathling-us": 3.336930336415688,
+          "postwalk-us": 9.642622650182886,
+          "time-ratio": 2.8896685510493336,
+          "pathling-change-percent": -65.39395496978824
+        },
+        {
+          "round": 4,
+          "pathling-index": 119,
+          "postwalk-index": 120,
+          "pathling-us": 3.2963701497558775,
+          "postwalk-us": 10.099126135996187,
+          "time-ratio": 3.0637111966154977,
+          "pathling-change-percent": -67.35984771982729
+        },
+        {
+          "round": 5,
+          "pathling-index": 197,
+          "postwalk-index": 198,
+          "pathling-us": 3.0633120213356735,
+          "postwalk-us": 9.867063530839557,
+          "time-ratio": 3.2210442364722915,
+          "pathling-change-percent": -68.9541674505158
+        },
+        {
+          "round": 6,
+          "pathling-index": 200,
+          "postwalk-index": 199,
+          "pathling-us": 3.338431137086843,
+          "postwalk-us": 9.857283911744352,
+          "time-ratio": 2.9526695345724403,
+          "pathling-change-percent": -66.13234267190676
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": 136.06580102319685,
+      "mean-time-ratio": 15.972606105632732,
+      "median-time-ratio": 16.06899696363297,
+      "pathling-mean-change-percent": -93.73928090765757,
+      "pathling-median-change-percent": -93.77683621284403,
+      "implementations": {
+        "pathling": {
+          "means-us": [
+            48.2066236816966,
+            53.40563628723405,
+            55.90206846133983,
+            51.24011816203206,
+            51.093250595937405,
+            55.48819668053199
+          ],
+          "median-us": 52.32287722463306,
+          "mean-us": 52.555982311461996,
+          "min-us": 48.2066236816966,
+          "max-us": 55.90206846133983,
+          "allocation-bytes": [
+            2296.0064959877723,
+            8376.007234042554,
+            8376.00752545374,
+            8376.006473088544,
+            8376.006946927517,
+            8376.007443489683
+          ],
+          "median-allocation-bytes": 8376.007090485036
+        },
+        "postwalk": {
+          "means-us": [
+            854.8725053321929,
+            841.4680937935844,
+            836.0696565639745,
+            817.8909837127371,
+            840.0842167087543,
+            846.3505676222597
+          ],
+          "median-us": 840.7761552511694,
+          "mean-us": 839.4560039555837,
+          "min-us": 817.8909837127371,
+          "max-us": 854.8725053321929,
+          "allocation-bytes": [
+            1139688.116338751,
+            1139688.1138075313,
+            1139688.1132389675,
+            1139688.1105691057,
+            1139688.1144781145,
+            1139688.1146711635
+          ],
+          "median-allocation-bytes": 1139688.114142823
+        }
+      },
+      "case": [
+        "large-sparse",
+        "find"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "pathling": 50.80612998446533,
+            "postwalk": 848.1702995628887
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "postwalk": 826.9803201383559,
+            "pathling": 53.57109331168594
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "pathling": 53.290723638234695,
+            "postwalk": 843.217392165507
+          }
+        }
+      ],
+      "fixture": {
+        "id": "large-sparse",
+        "shape": "mixed",
+        "depth": 5,
+        "breadth": 5,
+        "match-count": 31,
+        "seed": 20260914,
+        "node-count": 3906,
+        "sha256": "1b3202908ee22a713bb2435b9f999b7d1cc06bca8e85c41c2a3517b6aabef8ab"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 41,
+          "postwalk-index": 42,
+          "pathling-us": 48.2066236816966,
+          "postwalk-us": 854.8725053321929,
+          "time-ratio": 17.73350714160835,
+          "pathling-change-percent": -94.36095752512661
+        },
+        {
+          "round": 2,
+          "pathling-index": 44,
+          "postwalk-index": 43,
+          "pathling-us": 53.40563628723405,
+          "postwalk-us": 841.4680937935844,
+          "time-ratio": 15.756166432843846,
+          "pathling-change-percent": -93.65327851630526
+        },
+        {
+          "round": 3,
+          "pathling-index": 122,
+          "postwalk-index": 121,
+          "pathling-us": 55.90206846133983,
+          "postwalk-us": 836.0696565639745,
+          "time-ratio": 14.955969959182724,
+          "pathling-change-percent": -93.31370681587913
+        },
+        {
+          "round": 4,
+          "pathling-index": 123,
+          "postwalk-index": 124,
+          "pathling-us": 51.24011816203206,
+          "postwalk-us": 817.8909837127371,
+          "time-ratio": 15.961926183042618,
+          "pathling-change-percent": -93.73509193982889
+        },
+        {
+          "round": 5,
+          "pathling-index": 201,
+          "postwalk-index": 202,
+          "pathling-us": 51.093250595937405,
+          "postwalk-us": 840.0842167087543,
+          "time-ratio": 16.44217596082157,
+          "pathling-change-percent": -93.91807992821144
+        },
+        {
+          "round": 6,
+          "pathling-index": 204,
+          "postwalk-index": 203,
+          "pathling-us": 55.48819668053199,
+          "postwalk-us": 846.3505676222597,
+          "time-ratio": 15.252803627680361,
+          "pathling-change-percent": -93.44382826652782
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": 24.97298767091273,
+      "mean-time-ratio": 9.793483910830506,
+      "median-time-ratio": 9.653003029927723,
+      "pathling-mean-change-percent": -89.78912908720756,
+      "pathling-median-change-percent": -89.64052951294383,
+      "implementations": {
+        "postwalk": {
+          "means-us": [
+            825.0543108045031,
+            857.614228224886,
+            850.771377212327,
+            853.6014261641114,
+            837.1525388518211,
+            837.5961458263774
+          ],
+          "median-us": 844.1837615193522,
+          "mean-us": 843.6316711806711,
+          "min-us": 825.0543108045031,
+          "max-us": 857.614228224886,
+          "allocation-bytes": [
+            1139168.1120263592,
+            1139168.1164383562,
+            1139168.1153519931,
+            1139168.115843271,
+            1139168.1134278565,
+            1139168.1135225375
+          ],
+          "median-allocation-bytes": 1139168.1144372653
+        },
+        "pathling": {
+          "means-us": [
+            81.5532360346419,
+            88.04784219546492,
+            81.79318399357456,
+            86.85809306677088,
+            89.2855440527129,
+            89.31494619898639
+          ],
+          "median-us": 87.4529676311179,
+          "mean-us": 86.14214092369194,
+          "min-us": 81.5532360346419,
+          "max-us": 89.31494619898639,
+          "allocation-bytes": [
+            39824.011988923274,
+            45904.011952891546,
+            39824.01110838847,
+            45328.01278110619,
+            45904.01212337315,
+            45904.01209211345
+          ],
+          "median-allocation-bytes": 45616.01236699887
+        }
+      },
+      "case": [
+        "large-sparse",
+        "transform"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "postwalk": 841.3342695146946,
+            "pathling": 84.80053911505341
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "pathling": 84.32563853017271,
+            "postwalk": 852.1864016882192
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "postwalk": 837.3743423390993,
+            "pathling": 89.30024512584964
+          }
+        }
+      ],
+      "fixture": {
+        "id": "large-sparse",
+        "shape": "mixed",
+        "depth": 5,
+        "breadth": 5,
+        "match-count": 31,
+        "seed": 20260914,
+        "node-count": 3906,
+        "sha256": "1b3202908ee22a713bb2435b9f999b7d1cc06bca8e85c41c2a3517b6aabef8ab"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 46,
+          "postwalk-index": 45,
+          "pathling-us": 81.5532360346419,
+          "postwalk-us": 825.0543108045031,
+          "time-ratio": 10.116757481628802,
+          "pathling-change-percent": -90.11540998372337
+        },
+        {
+          "round": 2,
+          "pathling-index": 47,
+          "postwalk-index": 48,
+          "pathling-us": 88.04784219546492,
+          "postwalk-us": 857.614228224886,
+          "time-ratio": 9.740320794244962,
+          "pathling-change-percent": -89.7333976865439
+        },
+        {
+          "round": 3,
+          "pathling-index": 125,
+          "postwalk-index": 126,
+          "pathling-us": 81.79318399357456,
+          "postwalk-us": 850.771377212327,
+          "time-ratio": 10.401494790558113,
+          "pathling-change-percent": -90.38599720390435
+        },
+        {
+          "round": 4,
+          "pathling-index": 128,
+          "postwalk-index": 127,
+          "pathling-us": 86.85809306677088,
+          "postwalk-us": 853.6014261641114,
+          "time-ratio": 9.827540486157323,
+          "pathling-change-percent": -89.82451406424059
+        },
+        {
+          "round": 5,
+          "pathling-index": 206,
+          "postwalk-index": 205,
+          "pathling-us": 89.2855440527129,
+          "postwalk-us": 837.1525388518211,
+          "time-ratio": 9.376126311752978,
+          "pathling-change-percent": -89.3346146718768
+        },
+        {
+          "round": 6,
+          "pathling-index": 207,
+          "postwalk-index": 208,
+          "pathling-us": 89.31494619898639,
+          "postwalk-us": 837.5961458263774,
+          "time-ratio": 9.378006498042128,
+          "pathling-change-percent": -89.33675296334278
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": 30.071784587280256,
+      "mean-time-ratio": 7.577683619282115,
+      "median-time-ratio": 7.582966172237439,
+      "pathling-mean-change-percent": -86.80335508524784,
+      "pathling-median-change-percent": -86.81254831834573,
+      "implementations": {
+        "postwalk": {
+          "means-us": [
+            921.5013829044118,
+            926.9030907030528,
+            916.0417929136254,
+            930.2404614670382,
+            922.9538086470769,
+            913.1812153157257
+          ],
+          "median-us": 922.2275957757444,
+          "mean-us": 921.8036253251552,
+          "min-us": 913.1812153157257,
+          "max-us": 930.2404614670382,
+          "allocation-bytes": [
+            1176168.125,
+            1176168.1258094357,
+            1176168.1240875912,
+            1176168.1262766945,
+            1176168.124885216,
+            1176168.1238615664
+          ],
+          "median-allocation-bytes": 1176168.124942608
+        },
+        "pathling": {
+          "means-us": [
+            120.21268977927065,
+            123.02394739634548,
+            118.0480257838284,
+            117.86684770906949,
+            124.70989297524095,
+            126.02150382908347
+          ],
+          "median-us": 121.61831858780806,
+          "mean-us": 121.64715124547307,
+          "min-us": 117.86684770906949,
+          "max-us": 126.02150382908347,
+          "allocation-bytes": [
+            39112.01631477927,
+            39112.016715830876,
+            33032.01603017445,
+            39112.0160188457,
+            33032.016949152545,
+            39112.017083280996
+          ],
+          "median-allocation-bytes": 39112.016166812486
+        }
+      },
+      "case": [
+        "large-dense",
+        "find"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "postwalk": 924.2022368037324,
+            "pathling": 121.61831858780806
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "pathling": 117.95743674644893,
+            "postwalk": 923.1411271903319
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "postwalk": 918.0675119814014,
+            "pathling": 125.36569840216221
+          }
+        }
+      ],
+      "fixture": {
+        "id": "large-dense",
+        "shape": "mixed",
+        "depth": 5,
+        "breadth": 5,
+        "match-count": 1562,
+        "seed": 20260914,
+        "node-count": 3906,
+        "sha256": "012a4f62835b4455de044a1e4dfc32495799e6855441f31748dcee2a0f1959df"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 50,
+          "postwalk-index": 49,
+          "pathling-us": 120.21268977927065,
+          "postwalk-us": 921.5013829044118,
+          "time-ratio": 7.665591582689256,
+          "pathling-change-percent": -86.95469241723966
+        },
+        {
+          "round": 2,
+          "pathling-index": 51,
+          "postwalk-index": 52,
+          "pathling-us": 123.02394739634548,
+          "postwalk-us": 926.9030907030528,
+          "time-ratio": 7.534330594326119,
+          "pathling-change-percent": -86.72742073790775
+        },
+        {
+          "round": 3,
+          "pathling-index": 129,
+          "postwalk-index": 130,
+          "pathling-us": 118.0480257838284,
+          "postwalk-us": 916.0417929136254,
+          "time-ratio": 7.759907773392984,
+          "pathling-change-percent": -87.11324890446791
+        },
+        {
+          "round": 4,
+          "pathling-index": 132,
+          "postwalk-index": 131,
+          "pathling-us": 117.86684770906949,
+          "postwalk-us": 930.2404614670382,
+          "time-ratio": 7.892299484950586,
+          "pathling-change-percent": -87.32942152148627
+        },
+        {
+          "round": 5,
+          "pathling-index": 210,
+          "postwalk-index": 209,
+          "pathling-us": 124.70989297524095,
+          "postwalk-us": 922.9538086470769,
+          "time-ratio": 7.400806677224187,
+          "pathling-change-percent": -86.48795943991516
+        },
+        {
+          "round": 6,
+          "pathling-index": 211,
+          "postwalk-index": 212,
+          "pathling-us": 126.02150382908347,
+          "postwalk-us": 913.1812153157257,
+          "time-ratio": 7.246233282172436,
+          "pathling-change-percent": -86.19972665715507
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": 2.6644040329966034,
+      "mean-time-ratio": 2.3082414533170446,
+      "median-time-ratio": 2.3323830476456284,
+      "pathling-mean-change-percent": -56.67697594794704,
+      "pathling-median-change-percent": -57.125395804543025,
+      "implementations": {
+        "pathling": {
+          "means-us": [
+            395.98431143212787,
+            400.79832323232324,
+            395.67633270627067,
+            398.2463454761905,
+            396.2542142058166,
+            394.651320897184
+          ],
+          "median-us": 396.11926281897223,
+          "mean-us": 396.9351413249855,
+          "min-us": 394.651320897184,
+          "max-us": 400.79832323232324,
+          "allocation-bytes": [
+            434712.0534591195,
+            440792.0542264753,
+            434712.05386138614,
+            440792.0539682539,
+            440792.05369127524,
+            440792.0534381139
+          ],
+          "median-allocation-bytes": 440792.0535646946
+        },
+        "postwalk": {
+          "means-us": [
+            917.5571117611213,
+            924.4266531672818,
+            923.3770537224266,
+            869.587013773748,
+            931.5724550077521,
+            930.8125974752169
+          ],
+          "median-us": 923.9018534448542,
+          "mean-us": 916.222147484591,
+          "min-us": 869.587013773748,
+          "max-us": 931.5724550077521,
+          "allocation-bytes": [
+            1174448.1243144425,
+            1174448.1254612545,
+            1174448.125,
+            1174448.1174438687,
+            1174448.1265116278,
+            1174448.126394052
+          ],
+          "median-allocation-bytes": 1174448.1252306271
+        }
+      },
+      "case": [
+        "large-dense",
+        "transform"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "pathling": 398.3913173322255,
+            "postwalk": 920.9918824642016
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "postwalk": 896.4820337480874,
+            "pathling": 396.96133909123057
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "pathling": 395.4527675515003,
+            "postwalk": 931.1925262414845
+          }
+        }
+      ],
+      "fixture": {
+        "id": "large-dense",
+        "shape": "mixed",
+        "depth": 5,
+        "breadth": 5,
+        "match-count": 1562,
+        "seed": 20260914,
+        "node-count": 3906,
+        "sha256": "012a4f62835b4455de044a1e4dfc32495799e6855441f31748dcee2a0f1959df"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 53,
+          "postwalk-index": 54,
+          "pathling-us": 395.98431143212787,
+          "postwalk-us": 917.5571117611213,
+          "time-ratio": 2.3171552136564673,
+          "pathling-change-percent": -56.843633343749914
+        },
+        {
+          "round": 2,
+          "pathling-index": 56,
+          "postwalk-index": 55,
+          "pathling-us": 400.79832323232324,
+          "postwalk-us": 924.4266531672818,
+          "time-ratio": 2.306463374676936,
+          "pathling-change-percent": -56.64357773987767
+        },
+        {
+          "round": 3,
+          "pathling-index": 134,
+          "postwalk-index": 133,
+          "pathling-us": 395.67633270627067,
+          "postwalk-us": 923.3770537224266,
+          "time-ratio": 2.3336676404345194,
+          "pathling-change-percent": -57.14899659774157
+        },
+        {
+          "round": 4,
+          "pathling-index": 135,
+          "postwalk-index": 136,
+          "pathling-us": 398.2463454761905,
+          "postwalk-us": 869.587013773748,
+          "time-ratio": 2.1835404735075894,
+          "pathling-change-percent": -54.202818215060475
+        },
+        {
+          "round": 5,
+          "pathling-index": 213,
+          "postwalk-index": 214,
+          "pathling-us": 396.2542142058166,
+          "postwalk-us": 931.5724550077521,
+          "time-ratio": 2.35094649245519,
+          "pathling-change-percent": -57.46394045082417
+        },
+        {
+          "round": 6,
+          "pathling-index": 216,
+          "postwalk-index": 215,
+          "pathling-us": 394.651320897184,
+          "postwalk-us": 930.8125974752169,
+          "time-ratio": 2.358569573159279,
+          "pathling-change-percent": -57.60142031084923
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": 2.1114053175286203,
+      "mean-time-ratio": 1.9210875908411467,
+      "median-time-ratio": 1.8900931193764166,
+      "pathling-mean-change-percent": -47.94615275391213,
+      "pathling-median-change-percent": -47.092553813966475,
+      "implementations": {
+        "pathling": {
+          "means-us": [
+            296.46474617809304,
+            292.077364372016,
+            292.4773295885614,
+            296.5495335018337,
+            296.0132416864844,
+            290.6102145724259
+          ],
+          "median-us": 294.2452856375229,
+          "mean-us": 294.03207164990243,
+          "min-us": 290.6102145724259,
+          "max-us": 296.5495335018337,
+          "allocation-bytes": [
+            223544.04018912528,
+            223544.03975445777,
+            223544.03688357165,
+            223544.04377044304,
+            223544.04042806182,
+            223544.04188481678
+          ],
+          "median-allocation-bytes": 223544.04030859354
+        },
+        "postwalk": {
+          "means-us": [
+            554.0071492164454,
+            552.813819273692,
+            605.9023385366346,
+            555.6924940151937,
+            564.1428983240223,
+            556.609485569667
+          ],
+          "median-us": 556.1509897924303,
+          "mean-us": 564.8613641559425,
+          "min-us": 552.813819273692,
+          "max-us": 605.9023385366346,
+          "allocation-bytes": [
+            471992.07522123895,
+            471992.07464324916,
+            471992.08212560386,
+            471992.07559755427,
+            471992.0759776536,
+            471992.0750966317
+          ],
+          "median-allocation-bytes": 471992.0754093966
+        }
+      },
+      "case": [
+        "wide-many",
+        "find"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "pathling": 294.27105527505455,
+            "postwalk": 553.4104842450688
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "postwalk": 580.7974162759142,
+            "pathling": 294.5134315451976
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "pathling": 293.3117281294551,
+            "postwalk": 560.3761919468446
+          }
+        }
+      ],
+      "fixture": {
+        "id": "wide-many",
+        "shape": "vector",
+        "depth": 1,
+        "breadth": 10000,
+        "match-count": 10000,
+        "seed": 20260914,
+        "node-count": 10001,
+        "sha256": "afbff70a3600968aa0b025277463ff8783a6c6fb4d7da3fb308a495876be0d9e"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 57,
+          "postwalk-index": 58,
+          "pathling-us": 296.46474617809304,
+          "postwalk-us": 554.0071492164454,
+          "time-ratio": 1.8687117316931872,
+          "pathling-change-percent": -46.48719847796278
+        },
+        {
+          "round": 2,
+          "pathling-index": 60,
+          "postwalk-index": 59,
+          "pathling-us": 292.077364372016,
+          "postwalk-us": 552.813819273692,
+          "time-ratio": 1.892696547924127,
+          "pathling-change-percent": -47.16532868954716
+        },
+        {
+          "round": 3,
+          "pathling-index": 138,
+          "postwalk-index": 137,
+          "pathling-us": 292.4773295885614,
+          "postwalk-us": 605.9023385366346,
+          "time-ratio": 2.071621548887155,
+          "pathling-change-percent": -51.728634965339815
+        },
+        {
+          "round": 4,
+          "pathling-index": 139,
+          "postwalk-index": 140,
+          "pathling-us": 296.5495335018337,
+          "postwalk-us": 555.6924940151937,
+          "time-ratio": 1.8738606244064706,
+          "pathling-change-percent": -46.6342380550986
+        },
+        {
+          "round": 5,
+          "pathling-index": 217,
+          "postwalk-index": 218,
+          "pathling-us": 296.0132416864844,
+          "postwalk-us": 564.1428983240223,
+          "time-ratio": 1.9058029131058984,
+          "pathling-change-percent": -47.52867711959292
+        },
+        {
+          "round": 6,
+          "pathling-index": 220,
+          "postwalk-index": 219,
+          "pathling-us": 290.6102145724259,
+          "postwalk-us": 556.609485569667,
+          "time-ratio": 1.9153128749744917,
+          "pathling-change-percent": -47.7892091122022
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": 0.934002556215893,
+      "mean-time-ratio": 0.902626448389335,
+      "median-time-ratio": 0.9124910933190753,
+      "pathling-mean-change-percent": 10.787801729543855,
+      "pathling-median-change-percent": 9.590110777149818,
+      "implementations": {
+        "postwalk": {
+          "means-us": [
+            415.53432549710027,
+            438.4046411458334,
+            441.1452256190476,
+            426.8770366156246,
+            428.7974554607509,
+            429.6072293660969
+          ],
+          "median-us": 429.2023424134239,
+          "mean-us": 430.06098561740896,
+          "min-us": 415.53432549710027,
+          "max-us": 441.1452256190476,
+          "allocation-bytes": [
+            654280.0563380282,
+            654280.0590277778,
+            654280.0534505495,
+            654280.0578477244,
+            654280.0580204778,
+            654280.0581196581
+          ],
+          "median-allocation-bytes": 654280.0579341011
+        },
+        "pathling": {
+          "means-us": [
+            518.7100430399348,
+            482.0855291409587,
+            452.5395629017656,
+            464.66889227097766,
+            466.222935251631,
+            474.5037097663551
+          ],
+          "median-us": 470.36332250899306,
+          "mean-us": 476.45511206193714,
+          "min-us": 452.5395629017656,
+          "max-us": 518.7100430399348,
+          "allocation-bytes": [
+            700512.0665036675,
+            700512.0645467489,
+            700512.0615663195,
+            700512.062817552,
+            700512.0633737185,
+            700512.0635514018
+          ],
+          "median-allocation-bytes": 700512.0634625602
+        }
+      },
+      "case": [
+        "wide-many",
+        "transform"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "postwalk": 426.96948332146684,
+            "pathling": 500.39778609044674
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "pathling": 458.6042275863716,
+            "postwalk": 434.0111311173361
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "postwalk": 429.2023424134239,
+            "pathling": 470.36332250899306
+          }
+        }
+      ],
+      "fixture": {
+        "id": "wide-many",
+        "shape": "vector",
+        "depth": 1,
+        "breadth": 10000,
+        "match-count": 10000,
+        "seed": 20260914,
+        "node-count": 10001,
+        "sha256": "afbff70a3600968aa0b025277463ff8783a6c6fb4d7da3fb308a495876be0d9e"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 62,
+          "postwalk-index": 61,
+          "pathling-us": 518.7100430399348,
+          "postwalk-us": 415.53432549710027,
+          "time-ratio": 0.8010917295177739,
+          "pathling-change-percent": 24.829649733365898
+        },
+        {
+          "round": 2,
+          "pathling-index": 63,
+          "postwalk-index": 64,
+          "pathling-us": 482.0855291409587,
+          "postwalk-us": 438.4046411458334,
+          "time-ratio": 0.9093918291367064,
+          "pathling-change-percent": 9.96360072305782
+        },
+        {
+          "round": 3,
+          "pathling-index": 141,
+          "postwalk-index": 142,
+          "pathling-us": 452.5395629017656,
+          "postwalk-us": 441.1452256190476,
+          "time-ratio": 0.9748213455423534,
+          "pathling-change-percent": 2.582899376668668
+        },
+        {
+          "round": 4,
+          "pathling-index": 144,
+          "postwalk-index": 143,
+          "pathling-us": 464.66889227097766,
+          "postwalk-us": 426.8770366156246,
+          "time-ratio": 0.9186692798163165,
+          "pathling-change-percent": 8.853101107282612
+        },
+        {
+          "round": 5,
+          "pathling-index": 222,
+          "postwalk-index": 221,
+          "pathling-us": 466.222935251631,
+          "postwalk-us": 428.7974554607509,
+          "time-ratio": 0.9197262147331282,
+          "pathling-change-percent": 8.728008833603207
+        },
+        {
+          "round": 6,
+          "pathling-index": 223,
+          "postwalk-index": 224,
+          "pathling-us": 474.5037097663551,
+          "postwalk-us": 429.6072293660969,
+          "time-ratio": 0.905382235215052,
+          "pathling-change-percent": 10.45058773021692
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": 736.1042025527278,
+      "mean-time-ratio": 48.75181567870813,
+      "median-time-ratio": 49.94080826179877,
+      "pathling-mean-change-percent": -97.94879434523965,
+      "pathling-median-change-percent": -97.99762952422032,
+      "implementations": {
+        "postwalk": {
+          "means-us": [
+            46.56902834642011,
+            46.25156229427659,
+            46.9858776509983,
+            45.265947937643325,
+            46.04119015841766,
+            46.350637886407675
+          ],
+          "median-us": 46.30110009034213,
+          "mean-us": 46.24404071236061,
+          "min-us": 45.265947937643325,
+          "max-us": 46.9858776509983,
+          "allocation-bytes": [
+            106000.00631882173,
+            106000.00626381724,
+            106000.0063990966,
+            106000.00619618206,
+            106000.00622682113,
+            106000.0062747993
+          ],
+          "median-allocation-bytes": 106000.00626930827
+        },
+        "pathling": {
+          "means-us": [
+            0.8937697416377651,
+            0.920139598396202,
+            0.9272873132552574,
+            0.9338990186886172,
+            1.089314793426686,
+            0.9269518030851658
+          ],
+          "median-us": 0.9271195581702116,
+          "mean-us": 0.9485603780816154,
+          "min-us": 0.8937697416377651,
+          "max-us": 1.089314793426686,
+          "allocation-bytes": [
+            144.00136,
+            144.00147199999998,
+            144.00136,
+            144.00136,
+            144.00136,
+            144.00147199999998
+          ],
+          "median-allocation-bytes": 144.00136
+        }
+      },
+      "case": [
+        "deep-one",
+        "find"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "postwalk": 46.410295320348354,
+            "pathling": 0.9069546700169835
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "pathling": 0.9305931659719373,
+            "postwalk": 46.12591279432081
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "postwalk": 46.195914022412666,
+            "pathling": 1.008133298255926
+          }
+        }
+      ],
+      "fixture": {
+        "id": "deep-one",
+        "shape": "vector",
+        "depth": 128,
+        "breadth": 1,
+        "match-count": 1,
+        "seed": 20260914,
+        "node-count": 129,
+        "sha256": "c96e102694f2a7397266ea2a22cda27c3d2648c1c4b4e819b0ebd56ccfd81ba1"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 66,
+          "postwalk-index": 65,
+          "pathling-us": 0.8937697416377651,
+          "postwalk-us": 46.56902834642011,
+          "time-ratio": 52.10405563863228,
+          "pathling-change-percent": -98.08076360324904
+        },
+        {
+          "round": 2,
+          "pathling-index": 67,
+          "postwalk-index": 68,
+          "pathling-us": 0.920139598396202,
+          "postwalk-us": 46.25156229427659,
+          "time-ratio": 50.265810073702724,
+          "pathling-change-percent": -98.0105761778558
+        },
+        {
+          "round": 3,
+          "pathling-index": 145,
+          "postwalk-index": 146,
+          "pathling-us": 0.9272873132552574,
+          "postwalk-us": 46.9858776509983,
+          "time-ratio": 50.67024748354812,
+          "pathling-change-percent": -98.02645526780842
+        },
+        {
+          "round": 4,
+          "pathling-index": 148,
+          "postwalk-index": 147,
+          "pathling-us": 0.9338990186886172,
+          "postwalk-us": 45.265947937643325,
+          "time-ratio": 48.46985276974148,
+          "pathling-change-percent": -97.93686189898172
+        },
+        {
+          "round": 5,
+          "pathling-index": 226,
+          "postwalk-index": 225,
+          "pathling-us": 1.089314793426686,
+          "postwalk-us": 46.04119015841766,
+          "time-ratio": 42.26619379103876,
+          "pathling-change-percent": -97.6340429305181
+        },
+        {
+          "round": 6,
+          "pathling-index": 227,
+          "postwalk-index": 228,
+          "pathling-us": 0.9269518030851658,
+          "postwalk-us": 46.350637886407675,
+          "time-ratio": 50.003287907892556,
+          "pathling-change-percent": -98.000131507668
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": 1.5848354340290558,
+      "mean-time-ratio": 4.084195929430425,
+      "median-time-ratio": 4.066277353067233,
+      "pathling-mean-change-percent": -75.51537640997898,
+      "pathling-median-change-percent": -75.40748175365633,
+      "implementations": {
+        "pathling": {
+          "means-us": [
+            11.616639986808096,
+            11.287768876247751,
+            11.48325428076766,
+            11.515838213305432,
+            11.49602096033427,
+            11.284565907890823
+          ],
+          "median-us": 11.489637620550965,
+          "mean-us": 11.447348037559005,
+          "min-us": 11.284565907890823,
+          "max-us": 11.616639986808096,
+          "allocation-bytes": [
+            66576.00156462115,
+            66576.00152591246,
+            66576.00155761455,
+            66576.00154679042,
+            66576.00156544961,
+            66576.00151717983
+          ],
+          "median-allocation-bytes": 66576.00155220248
+        },
+        "postwalk": {
+          "means-us": [
+            46.57612950453573,
+            47.79661542464314,
+            46.575343298014694,
+            45.618248734818586,
+            46.86397699825562,
+            47.08895958636329
+          ],
+          "median-us": 46.720053251395676,
+          "mean-us": 46.75321225777185,
+          "min-us": 45.618248734818586,
+          "max-us": 47.79661542464314,
+          "allocation-bytes": [
+            105512.00628378689,
+            105512.00626342674,
+            105512.0063480209,
+            105512.00617087891,
+            105512.00635454632,
+            105512.00638048323
+          ],
+          "median-allocation-bytes": 105512.0063159039
+        }
+      },
+      "case": [
+        "deep-one",
+        "transform"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "pathling": 11.452204431527925,
+            "postwalk": 47.18637246458944
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "postwalk": 46.09679601641664,
+            "pathling": 11.499546247036546
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "pathling": 11.390293434112547,
+            "postwalk": 46.976468292309455
+          }
+        }
+      ],
+      "fixture": {
+        "id": "deep-one",
+        "shape": "vector",
+        "depth": 128,
+        "breadth": 1,
+        "match-count": 1,
+        "seed": 20260914,
+        "node-count": 129,
+        "sha256": "c96e102694f2a7397266ea2a22cda27c3d2648c1c4b4e819b0ebd56ccfd81ba1"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 69,
+          "postwalk-index": 70,
+          "pathling-us": 11.616639986808096,
+          "postwalk-us": 46.57612950453573,
+          "time-ratio": 4.0094321212870305,
+          "pathling-change-percent": -75.05881207738219
+        },
+        {
+          "round": 2,
+          "pathling-index": 72,
+          "postwalk-index": 71,
+          "pathling-us": 11.287768876247751,
+          "postwalk-us": 47.79661542464314,
+          "time-ratio": 4.234372261574119,
+          "pathling-change-percent": -76.38374856469865
+        },
+        {
+          "round": 3,
+          "pathling-index": 150,
+          "postwalk-index": 149,
+          "pathling-us": 11.48325428076766,
+          "postwalk-us": 46.575343298014694,
+          "time-ratio": 4.055935901029365,
+          "pathling-change-percent": -75.3447780142135
+        },
+        {
+          "round": 4,
+          "pathling-index": 151,
+          "postwalk-index": 152,
+          "pathling-us": 11.515838213305432,
+          "postwalk-us": 45.618248734818586,
+          "time-ratio": 3.9613485262506667,
+          "pathling-change-percent": -74.75607123752681
+        },
+        {
+          "round": 5,
+          "pathling-index": 229,
+          "postwalk-index": 230,
+          "pathling-us": 11.49602096033427,
+          "postwalk-us": 46.86397699825562,
+          "time-ratio": 4.0765389311618785,
+          "pathling-change-percent": -75.46938673010577
+        },
+        {
+          "round": 6,
+          "pathling-index": 232,
+          "postwalk-index": 231,
+          "pathling-us": 11.284565907890823,
+          "postwalk-us": 47.08895958636329,
+          "time-ratio": 4.172864066790195,
+          "pathling-change-percent": -76.03564400866742
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": 51.266378879915855,
+      "mean-time-ratio": 14.819341456300222,
+      "median-time-ratio": 14.646210237291013,
+      "pathling-mean-change-percent": -93.25206182104088,
+      "pathling-median-change-percent": -93.17229519583243,
+      "implementations": {
+        "pathling": {
+          "means-us": [
+            5.4022224069587805,
+            4.476626858456386,
+            4.239293675700978,
+            5.29849439248876,
+            5.292334386805931,
+            4.25181316161826
+          ],
+          "median-us": 4.884480622631159,
+          "mean-us": 4.826797480338183,
+          "min-us": 4.239293675700978,
+          "max-us": 5.4022224069587805,
+          "allocation-bytes": [
+            2344.00136,
+            1800.001472,
+            1800.0013599999997,
+            2344.00136,
+            2344.00136,
+            1800.0013599999997
+          ],
+          "median-allocation-bytes": 2072.001416
+        },
+        "postwalk": {
+          "means-us": [
+            72.63598981976772,
+            71.07478765283481,
+            71.45033254665334,
+            71.62792765140678,
+            70.51128415051045,
+            71.8794381880734
+          ],
+          "median-us": 71.53913009903006,
+          "mean-us": 71.52996000154108,
+          "min-us": 70.51128415051045,
+          "max-us": 72.63598981976772,
+          "allocation-bytes": [
+            106224.00878993786,
+            106224.00861067837,
+            106224.009711511,
+            106224.00972818313,
+            106224.0095532453,
+            106224.00974770643
+          ],
+          "median-allocation-bytes": 106224.00963237815
+        }
+      },
+      "case": [
+        "hash-map-sparse",
+        "find"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "pathling": 4.939424632707583,
+            "postwalk": 71.85538873630126
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "postwalk": 71.53913009903006,
+            "pathling": 4.768894034094869
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "pathling": 4.772073774212096,
+            "postwalk": 71.19536116929191
+          }
+        }
+      ],
+      "fixture": {
+        "id": "hash-map-sparse",
+        "shape": "map",
+        "depth": 2,
+        "breadth": 16,
+        "match-count": 8,
+        "seed": 20260914,
+        "node-count": 273,
+        "sha256": "7b1618ee4c967ec85e309ca0332821e05338fa7491651ed6507c6587c529a9ee"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 73,
+          "postwalk-index": 74,
+          "pathling-us": 5.4022224069587805,
+          "postwalk-us": 72.63598981976772,
+          "time-ratio": 13.4455756072173,
+          "pathling-change-percent": -92.56260922393518
+        },
+        {
+          "round": 2,
+          "pathling-index": 76,
+          "postwalk-index": 75,
+          "pathling-us": 4.476626858456386,
+          "postwalk-us": 71.07478765283481,
+          "time-ratio": 15.87686217772963,
+          "pathling-change-percent": -93.70152622850948
+        },
+        {
+          "round": 3,
+          "pathling-index": 154,
+          "postwalk-index": 153,
+          "pathling-us": 4.239293675700978,
+          "postwalk-us": 71.45033254665334,
+          "time-ratio": 16.854301214420786,
+          "pathling-change-percent": -94.06679643802505
+        },
+        {
+          "round": 4,
+          "pathling-index": 155,
+          "postwalk-index": 156,
+          "pathling-us": 5.29849439248876,
+          "postwalk-us": 71.62792765140678,
+          "time-ratio": 13.518543636272938,
+          "pathling-change-percent": -92.60275347030134
+        },
+        {
+          "round": 5,
+          "pathling-index": 233,
+          "postwalk-index": 234,
+          "pathling-us": 5.292334386805931,
+          "postwalk-us": 70.51128415051045,
+          "time-ratio": 13.323285906933394,
+          "pathling-change-percent": -92.4943440605774
+        },
+        {
+          "round": 6,
+          "pathling-index": 236,
+          "postwalk-index": 235,
+          "pathling-us": 4.25181316161826,
+          "postwalk-us": 71.8794381880734,
+          "time-ratio": 16.905596613919823,
+          "pathling-change-percent": -94.0847991180825
+        }
+      ]
+    },
+    {
+      "median-allocation-ratio": 7.661841310690225,
+      "mean-time-ratio": 10.662207705850337,
+      "median-time-ratio": 10.343654761599307,
+      "pathling-mean-change-percent": -90.62107935253127,
+      "pathling-median-change-percent": -90.33223726963038,
+      "implementations": {
+        "postwalk": {
+          "means-us": [
+            70.56755922560346,
+            73.97550983053758,
+            73.1511614110056,
+            74.62092453424624,
+            70.7135869011465,
+            73.78243539398844
+          ],
+          "median-us": 73.46679840249702,
+          "mean-us": 72.80186288275463,
+          "min-us": 70.56755922560346,
+          "max-us": 74.62092453424624,
+          "allocation-bytes": [
+            105856.00958016343,
+            105856.01000588581,
+            105856.0099342586,
+            105856.01012130684,
+            105856.00960519812,
+            105856.01000294203
+          ],
+          "median-allocation-bytes": 105856.00996860032
+        },
+        "pathling": {
+          "means-us": [
+            6.193248668924961,
+            7.127473572372912,
+            6.232847619377004,
+            7.154592289785385,
+            7.182293609523195,
+            7.077717937931863
+          ],
+          "median-us": 7.102595755152388,
+          "mean-us": 6.828028949652553,
+          "min-us": 6.193248668924961,
+          "max-us": 7.182293609523195,
+          "allocation-bytes": [
+            13272.00136,
+            13816.00136,
+            13272.00136,
+            13816.00136,
+            13816.00136,
+            13816.00136
+          ],
+          "median-allocation-bytes": 13816.00136
+        }
+      },
+      "case": [
+        "hash-map-sparse",
+        "transform"
+      ],
+      "runtime": "clj112",
+      "blocks": [
+        {
+          "block": 1,
+          "means-us": {
+            "postwalk": 72.27153452807052,
+            "pathling": 6.660361120648936
+          }
+        },
+        {
+          "block": 2,
+          "means-us": {
+            "pathling": 6.693719954581194,
+            "postwalk": 73.88604297262592
+          }
+        },
+        {
+          "block": 3,
+          "means-us": {
+            "postwalk": 72.24801114756747,
+            "pathling": 7.130005773727529
+          }
+        }
+      ],
+      "fixture": {
+        "id": "hash-map-sparse",
+        "shape": "map",
+        "depth": 2,
+        "breadth": 16,
+        "match-count": 8,
+        "seed": 20260914,
+        "node-count": 273,
+        "sha256": "7b1618ee4c967ec85e309ca0332821e05338fa7491651ed6507c6587c529a9ee"
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "pathling-index": 78,
+          "postwalk-index": 77,
+          "pathling-us": 6.193248668924961,
+          "postwalk-us": 70.56755922560346,
+          "time-ratio": 11.394271891532613,
+          "pathling-change-percent": -91.22366036619569
+        },
+        {
+          "round": 2,
+          "pathling-index": 79,
+          "postwalk-index": 80,
+          "pathling-us": 7.127473572372912,
+          "postwalk-us": 73.97550983053758,
+          "time-ratio": 10.37892446452233,
+          "pathling-change-percent": -90.36509029988376
+        },
+        {
+          "round": 3,
+          "pathling-index": 157,
+          "postwalk-index": 158,
+          "pathling-us": 6.232847619377004,
+          "postwalk-us": 73.1511614110056,
+          "time-ratio": 11.736394963931001,
+          "pathling-change-percent": -91.47949602008742
+        },
+        {
+          "round": 4,
+          "pathling-index": 160,
+          "postwalk-index": 159,
+          "pathling-us": 7.154592289785385,
+          "postwalk-us": 74.62092453424624,
+          "time-ratio": 10.429794111508293,
+          "pathling-change-percent": -90.41208302571769
+        },
+        {
+          "round": 5,
+          "pathling-index": 238,
+          "postwalk-index": 237,
+          "pathling-us": 7.182293609523195,
+          "postwalk-us": 70.7135869011465,
+          "time-ratio": 9.845543881328586,
+          "pathling-change-percent": -89.84312078587722
+        },
+        {
+          "round": 6,
+          "pathling-index": 239,
+          "postwalk-index": 240,
+          "pathling-us": 7.077717937931863,
+          "postwalk-us": 73.78243539398844,
+          "time-ratio": 10.42460805036658,
+          "pathling-change-percent": -90.4073132038299
+        }
+      ]
+    }
+  ]
+}
