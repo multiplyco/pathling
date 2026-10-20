@@ -5,13 +5,24 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * Navigation structures for Pathling.
+ * Internal navigation structures for Pathling.
+ *
+ * Navigation returned by the Clojure/ClojureScript API is opaque to callers.
+ * None of these Java types or members is public API, regardless of visibility;
+ * callers must not construct or mutate nodes or depend on their representation.
  *
  * These types record the path to matching elements in a data structure,
  * enabling efficient targeted updates without re-scanning.
  *
  * All navigation types implement {@link Updatable} for efficient virtual dispatch
  * during the update phase.
+ *
+ * Child lists are owned by the builder and must not be mutated after construction.
+ * A null child list denotes no matching descendants. Positional children are in
+ * ascending index order. Replacement consumption follows scan order, including
+ * value descendants before a matching map key and children before their parent.
+ * Navigation captures keys, positions and set members from the original input;
+ * reuse it with that input, and rescan after changes to the navigated structure.
  */
 public final class Nav {
     private Nav() {} // Prevent instantiation
@@ -103,8 +114,9 @@ public final class Nav {
                                 }
                             }
                             case KeyVal kv -> {
-                                Object newK = r.replace(kv.key());
+                                // Consume replacements in scan order: value subtree, then key.
                                 Object value = kv.child().applyUpdates(RT.get(m, kv.key()), r);
+                                Object newK = r.replace(kv.key());
                                 if (newK != REMOVE && value != REMOVE) {
                                     tm = tm.assoc(newK, value);
                                 }
@@ -170,8 +182,9 @@ public final class Nav {
                                 }
                             }
                             case KeyVal kv -> {
-                                Object newK = r.replace(kv.key());
+                                // Consume replacements in scan order: value subtree, then key.
                                 Object value = kv.child().applyUpdates(RT.get(m, kv.key()), r);
+                                Object newK = r.replace(kv.key());
                                 if (newK != REMOVE && value != REMOVE) {
                                     result = result.assoc(newK, value);
                                 }
@@ -464,19 +477,18 @@ public final class Nav {
         }
     }
 
-    /** For backwards compatibility */
+    /** Legacy internal alias; not a public API compatibility guarantee. */
     public static final Updatable SCALAR = Scalar.INSTANCE;
 
     // ========================================================================
     // Helper methods
     // ========================================================================
 
-    @SuppressWarnings("unchecked")
-    private static <T> T withMeta(Object obj, IPersistentMap meta) {
+    private static Object withMeta(Object obj, IPersistentMap meta) {
         if (meta != null && obj instanceof IObj o) {
-            return (T) o.withMeta(meta);
+            return o.withMeta(meta);
         }
-        return (T) obj;
+        return obj;
     }
 
     /**

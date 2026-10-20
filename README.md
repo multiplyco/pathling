@@ -91,8 +91,9 @@ Measured on an M1 in Clojure, on a randomly generated structure 6 levels deep, w
 The data structure consists of vectors, maps, and sets. This results in ~10,000 nodes, out of which ~300 are
 matches. Criterium and YourKit were used to estimate performance and allocation count.
 
-Pathling's performance scales with match count rather than structure size. The speedup advantage grows as matches
-become sparser relative to the overall structure. Postwalk always visits every node regardless of how many match.
+Scanning visits the structure to find matches. Subsequent updates follow the recorded navigation, avoiding a full
+rescan; their cost also depends on rebuilding the affected collections. Sparse matches can therefore give a larger
+advantage over postwalk, which visits every node on each update.
 
 Note that efficiency claims are mostly about Clojure. Less attention has been given to the ClojureScript equivalent, and
 it could be improved from its current state.
@@ -100,14 +101,22 @@ it could be improved from its current state.
 Key properties:
 
 - **Targeted updates**: Build a navigation structure, then apply multiple updates efficiently as a separate step
-- **Stack-safe**: Recursion depth scales with structure depth, not match count (10,000+ matches won't overflow)
-- **Allocation-friendly**: Object allocations scale with matches, not structure size
+- **Bounded by nesting depth**: Stack usage follows structure depth, not match count; very deep inputs can overflow
+- **Allocation-friendly**: Navigation is retained only for matches and their ancestors; traversal and updates can also allocate
 - **Transducer support**: `find-when` accepts transducers for transformation, filtering, and early termination
 - **`REMOVE` sentinel**: Conditionally remove elements during transformation
 - **Metadata preservation**: Collection metadata survives transformations
 - **Cross-platform**: Works in both Clojure and ClojureScript
 
 ## API
+
+The supported public API is the documented Clojure/ClojureScript surface, including the accumulator helpers.
+All Java types and members in Pathling's implementation are internal, even when declared `public`; they are not
+supported API or extension points and carry no Java source or binary compatibility guarantee.
+
+The `:nav` returned by `path-when` is opaque. Retain it and pass it unchanged to `update-paths` with the scanned input.
+Do not construct or mutate its internals or depend on its concrete type, fields, representation, or serialization.
+The raw match accumulator is intentionally mutable through the documented accumulator operations; navigation is not.
 
 ### `path-when`
 
@@ -277,6 +286,11 @@ Pathling handles all standard Clojure collections:
 - **Scalars**: primitives, nil, and opaque values (treated as leaves)
 
 Sorted collections (sorted-map, sorted-set) preserve their type and comparator through transformations.
+
+## Implementation guide
+
+The [Java package documentation](src/co/multiply/pathling/package-info.java) maps the scanner families, explains
+the navigation/update boundary, and records the ownership and traversal contracts shared by the specialized implementations.
 
 ## License
 

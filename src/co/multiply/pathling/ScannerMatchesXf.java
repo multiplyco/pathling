@@ -1,7 +1,6 @@
 package co.multiply.pathling;
 
 import clojure.lang.*;
-import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
@@ -23,35 +22,9 @@ public final class ScannerMatchesXf {
      * @return vector of matching values (transformed by xf), or null if no matches
      */
     public static IPersistentVector matchesWhen(Object obj, IFn pred, IFn xf) {
-        ArrayList<Object> matches = new ArrayList<>();
-
-        // Create base rf with completing arity
-        IFn baseRf = new AFn() {
-            @Override
-            public Object invoke(Object acc) {
-                return acc; // completing
-            }
-            @Override
-            public Object invoke(Object acc, Object x) {
-                @SuppressWarnings("unchecked")
-                ArrayList<Object> list = (ArrayList<Object>) acc;
-                list.add(x);
-                return acc;
-            }
-        };
-        IFn rf = (IFn) xf.invoke(baseRf);
-
-        IFn addMatch = new AFn() {
-            @Override
-            public Object invoke(Object x) {
-                return rf.invoke(matches, x);
-            }
-        };
-
-        scanWhen(obj, addMatch, pred);
-        rf.invoke(matches); // completing
-
-        return matches.isEmpty() ? null : PersistentVector.create(matches);
+        MatchReducer matches = new MatchReducer(xf);
+        scanWhen(obj, matches, pred);
+        return matches.complete();
     }
 
     // ========================================================================
@@ -65,7 +38,7 @@ public final class ScannerMatchesXf {
             case IPersistentVector v -> scanVector(v, addMatch, pred);
             case IPersistentSet s -> scanSet(s, addMatch, pred);
             case ISeq s -> scanSeq(s, addMatch, pred);
-            case Sequential s -> scanSeq(RT.seq(s), addMatch, pred);
+            case Sequential s -> scanSeq(s, addMatch, pred);
             default -> scanScalar(obj, addMatch, pred);
         };
     }
@@ -102,11 +75,8 @@ public final class ScannerMatchesXf {
         return false;
     }
 
-    private static boolean scanSeq(ISeq s, IFn addMatch, IFn pred) {
-        if (s == null) {
-            return scanScalar(null, addMatch, pred);
-        }
-        Object originalColl = s;
+    private static boolean scanSeq(Object originalColl, IFn addMatch, IFn pred) {
+        ISeq s = RT.seq(originalColl);
         while (s != null) {
             if (scanWhen(s.first(), addMatch, pred)) return true;
             s = s.next();
