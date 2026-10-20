@@ -245,27 +245,77 @@ public final class Nav {
         @Override
         public Object applyUpdates(Object data, Replacer r) {
             IPersistentVector v = (IPersistentVector) data;
-            Object updated;
+            Object updated = v;
             if (children != null) {
-                ITransientVector tv = (ITransientVector) ((IEditableCollection) v).asTransient();
-                ArrayList<Integer> removals = null;
-                int n = children.size();
-                for (int i = 0; i < n; i++) {
-                    Pos p = children.get(i);
-                    Object result = p.child().applyUpdates(v.nth(p.index()), r);
-                    if (result == REMOVE) {
-                        if (removals == null) removals = new ArrayList<>();
-                        removals.add(p.index());
-                    } else {
-                        tv = tv.assocN(p.index(), result);
+                if (r instanceof ListReplacer positional) {
+                    updated = applyPositional(v, positional);
+                } else {
+                    ITransientVector tv = (ITransientVector) ((IEditableCollection) v).asTransient();
+                    ArrayList<Integer> removals = null;
+                    int n = children.size();
+                    for (int i = 0; i < n; i++) {
+                        Pos p = children.get(i);
+                        Object original = v.nth(p.index());
+                        // Give scalar function replacements their own call site.
+                        Object result = p.child() instanceof Scalar
+                            ? r.replace(original)
+                            : p.child().applyUpdates(original, r);
+                        if (result == REMOVE) {
+                            if (removals == null) removals = new ArrayList<>();
+                            removals.add(p.index());
+                        } else {
+                            tv = tv.assocN(p.index(), result);
+                        }
                     }
+                    updated = VecRemover.removeIndices((IPersistentVector) tv.persistent(), removals, RT.meta(v));
                 }
-                updated = VecRemover.removeIndices((IPersistentVector) tv.persistent(), removals, RT.meta(v));
-            } else {
-                updated = v;
             }
             return terminal ? r.replace(updated) : updated;
         }
+
+        // Extract only the positional loop to keep the recursive entry small
+        // while retaining the function loop's outer replacer-test context.
+        private IPersistentVector applyPositional(IPersistentVector v, ListReplacer r) {
+            int n = children.size();
+            if (n > 32 && v.getClass() == PersistentVector.class
+                    && n == v.count() && hasFullScalarCoverage(n)) {
+                return rebuildDense(v, r, n);
+            }
+            ITransientVector tv = (ITransientVector) ((IEditableCollection) v).asTransient();
+            ArrayList<Integer> removals = null;
+            for (int i = 0; i < n; i++) {
+                Pos p = children.get(i);
+                Object result = p.child() instanceof Scalar
+                    ? r.next()
+                    : p.child().applyUpdates(v.nth(p.index()), r);
+                if (result == REMOVE) {
+                    if (removals == null) removals = new ArrayList<>();
+                    removals.add(p.index());
+                } else {
+                    tv = tv.assocN(p.index(), result);
+                }
+            }
+            return VecRemover.removeIndices((IPersistentVector) tv.persistent(), removals, RT.meta(v));
+        }
+
+        // Establish eligibility before advancing the shared replacement cursor.
+        private boolean hasFullScalarCoverage(int n) {
+            for (int i = 0; i < n; i++) {
+                Pos p = children.get(i);
+                if (p.index() != i || !(p.child() instanceof Scalar)) return false;
+            }
+            return true;
+        }
+
+        private IPersistentVector rebuildDense(IPersistentVector v, ListReplacer r, int n) {
+            ITransientVector tv = PersistentVector.EMPTY.asTransient();
+            for (int i = 0; i < n; i++) {
+                Object result = r.next();
+                if (result != REMOVE) tv = (ITransientVector) tv.conj(result);
+            }
+            return (IPersistentVector) withMeta(tv.persistent(), RT.meta(v));
+        }
+
     }
 
     /**

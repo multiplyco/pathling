@@ -24,6 +24,11 @@ public final class ListReplacer implements Replacer {
         this.replacements = replacements;
     }
 
+    /** Consume a positional replacement without requiring an original value. */
+    Object next() {
+        return replacements.get(idx++);
+    }
+
     @Override
     public Object replace(Object v) {
         return replacements.get(idx++);
