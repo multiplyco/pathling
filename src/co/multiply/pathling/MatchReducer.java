@@ -38,8 +38,10 @@ final class MatchReducer extends AFn {
 
     @Override
     public Object invoke(Object value) {
-        state = rf.invoke(state, value);
-        return state;
+        Object previous = state;
+        Object next = rf.invoke(previous, value);
+        if (next != previous) state = next;
+        return next;
     }
 
     IPersistentVector complete() {
