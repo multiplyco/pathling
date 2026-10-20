@@ -21,6 +21,8 @@
 - Regression coverage for traversal order, replacement cursors, metadata, collection boundaries, reentrancy and concurrency.
 - Reproducible JVM benchmarks with isolated workers, allocation measurements, deterministic fixtures and opt-in
   scaling, map and vector suites, including a pinned Clojure 1.13 comparison runtime.
+- Controlled postwalk and value-only tree-seq comparisons, including separate collection/replacement timing and
+  allocation, derived traversal totals and per-JVM variation, replacing the older README figures.
 
 ## 0.2.1 - 2025-01-30
 

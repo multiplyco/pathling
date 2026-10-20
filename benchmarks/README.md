@@ -24,11 +24,11 @@ performs no measurements. No library implementation is changed by benchmarking.
 
 The default suite prioritizes Quiescent's Pathling usage. Each fixture measures:
 
-| Operation | Timed work |
-|---|---|
-| `:path-raw` | `(p/path-when data groundable? {:raw-matches true})` |
+| Operation            | Timed work                                                                                            |
+|----------------------|-------------------------------------------------------------------------------------------------------|
+| `:path-raw`          | `(p/path-when data groundable? {:raw-matches true})`                                                  |
 | `:update-array-list` | `update-paths` with a prebuilt navigation tree and a raw accumulator already filled with replacements |
-| `:raw-roundtrip` | Raw scan, replace matches in the same accumulator, and update the original data |
+| `:raw-roundtrip`     | Raw scan, replace matches in the same accumulator, and update the original data                       |
 
 The update-only case excludes scanning and replacement preparation. The roundtrip
 includes filling the accumulator with synthetic resolved values. Every invocation
@@ -104,6 +104,10 @@ hardware, and JVM flags for before/after comparisons.
 
 ### Comparison with postwalk
 
+The [2026-10-16 controlled comparison](comparisons/2026-10-16-postwalk/README.md)
+records all ten fixtures on the unreleased `b227ede` implementation: absolute times,
+allocated bytes, variation, paired comparisons and machine-readable results.
+
 The `:comparison` suite pairs `:find` with `:postwalk-find`, and `:transform` with
 `:postwalk-transform`, on the same ten deterministic fixtures as the primary suite.
 It covers scalar, small, sparse/dense mixed, wide-vector, deeply nested and hash-map
@@ -142,6 +146,69 @@ and must not be presented as equivalent to a complete postwalk. The former M1
 README table used a different input and measurement setup; it is not a controlled
 before/after reference for the current suite.
 
+### Value-only discovery and staged collective updates
+
+The [2026-10-19 staged comparison](comparisons/2026-10-19-staged/README.md) is
+complete: all 300 full workers and 50 smoke checks passed. It reports separate
+collection/replacement timings and allocations, derived totals and every JVM
+observation. Measurements were restarted after the OS upgrade; the interrupted
+attempt and the earlier postwalk capture remain separate.
+
+The opt-in `:staged-comparison` suite uses the same ten primary inputs. It compares
+read-only discovery with `tree-seq`, then measures the first and last steps of
+collect → user batch processing → replace separately. User processing is outside
+every timed function; the existing direct-transform comparison remains separate.
+
+| Operation           | Timed work                                                                       |
+|---------------------|----------------------------------------------------------------------------------|
+| `:find`             | Pathling `find-when`, returning a vector of matches or nil                       |
+| `:tree-seq-find`    | Value-only `tree-seq`, filtered into a vector or nil                             |
+| `:collect`          | Pathling `path-when`, returning vector matches and navigation                    |
+| `:replace`          | `update-paths` with navigation and a replacement vector prepared outside timing  |
+| `:postwalk-replace` | Rediscover matching leaves with postwalk and consume the same replacement vector |
+
+`tree-seq` follows map values via `vals`, and other collections via `seq`; it does
+not visit keys or map-entry wrappers. Its result serves both as the read-only
+comparator and as the collection stage for ordinary Clojure. Only opaque leaves
+match, so its preorder enumeration has the same match order as Pathling's
+child-before-parent scan. Collection/key predicates are outside this comparison.
+
+Both replacement implementations receive the original input and the same immutable
+replacement vector. A synthetic batch function prepares `[match-count index
+resolved-value]` per occurrence outside timing. The results depend on the whole
+match collection and distinguish equal values occurring at different positions.
+Postwalk uses a fresh vector iterator per call to consume them; it does not use
+a value-to-replacement map or recompute user transformations. Iterator creation
+and the second full traversal are timed. Postwalk still visits map keys/entries,
+but these fixtures have no matching keys. Replacement values are not rescanned.
+When collection found no matches, both implementations immediately return the
+original input during replacement.
+
+```sh
+bb bench :suite :staged-comparison ':list?' true
+bb bench :suite :staged-comparison :forks 6
+```
+
+There are 50 operation/fixture cases, or 300 fresh JVMs at six repetitions. For a
+controlled comparison, interleave `:find`, `:tree-seq-find` and `:collect` using
+all six operation orders, grouped in three forward/reverse blocks. Interleave
+the two replacement operations in balanced ABBA/BAAB blocks. Reuse the same six
+tree-seq measurements for the two collection comparisons, acknowledging their
+shared baseline. Run every arm with the same frozen harness and full settings.
+
+Report collection and replacement time/allocation separately. A derived traversal
+total is the sum of the two stage medians: `:collect` + `:replace` for Pathling,
+and `:tree-seq-find` + `:postwalk-replace` for ordinary Clojure. Label this as a sum
+of separately measured stages, not a measured end-to-end call or the median of
+paired sums. User work, cache interactions between stages and whole-workflow GC
+effects are not measured. Preserve all JVM observations, modes and nonpositive
+overhead-adjusted estimates; omit ratios involving unresolved stage costs.
+
+The direct postwalk report predates this suite and used the previous OS/kernel.
+Compare implementations within each capture; do not infer changes from absolute
+times across environments. Library implementation is unchanged. No `mapv`
+comparator is included: both implementations must discover the input's shape.
+
 ### Collection-only sequence updates
 
 The opt-in `:sequence-updates` suite measures `:update-function` with navigation
@@ -171,11 +238,11 @@ The opt-in `:sparse-scaling` suite grows inputs while holding opaque-leaf match
 count at zero or one. Each family has 64, 1,024 and 16,384 leaves. A root vector
 contains repeated blocks of a fixed layout:
 
-| Family | Block layout | Leaf depth |
-| --- | --- | --- |
-| `array-maps` | An eight-entry persistent array map | 2 |
-| `hash-maps` | A sixteen-entry persistent hash map | 2 |
-| `mixed` | An array map containing a four-element vector, four-element list, eight-element set and sixteen-entry hash map | 3 |
+| Family       | Block layout                                                                                                   | Leaf depth |
+|--------------|----------------------------------------------------------------------------------------------------------------|------------|
+| `array-maps` | An eight-entry persistent array map                                                                            | 2          |
+| `hash-maps`  | A sixteen-entry persistent hash map                                                                            | 2          |
+| `mixed`      | An array map containing a four-element vector, four-element list, eight-element set and sixteen-entry hash map | 3          |
 
 The single match is always the first leaf visited, in the first block. Map keys,
 block widths, collection types and nesting depths are fixed within each family;
@@ -250,8 +317,8 @@ this new input.
 ### Array-map traversal across runtimes
 
 The opt-in `:array-map-traversal` suite builds 128 maps with `into`, at widths
-1, 8, 9, 16, 32, 63, 64 and 65. Keyword and mixed-key families have zero, one
-(at the final construction ID), or all leaves matching. Explicit hash-map
+1, 8, 9, 16, 32, 63, 64 and 65. Keyword and mixed-key families have zero, one (at the final construction ID), or all
+leaves matching. Explicit hash-map
 controls at widths 8 and 64 complete the suite. Input descriptions record actual
 map classes and traversal order; runtime-dependent promotion is not inferred from
 the fixture name. Validators check independent expected results, metadata,
@@ -377,7 +444,8 @@ same Criterium execution loop. These are approximate **allocated bytes**, not li
 heap size or object counts. Empty-loop control samples are saved without
 subtraction. JVMs without the counter report `:unsupported`. This scope is
 appropriate for synchronous Pathling operations, not for allocations in other
-threads. See the [JDK API](https://docs.oracle.com/en/java/javase/25/docs/api/jdk.management/com/sun/management/ThreadMXBean.html).
+threads. See
+the [JDK API](https://docs.oracle.com/en/java/javase/25/docs/api/jdk.management/com/sun/management/ThreadMXBean.html).
 
 Results are ignored by Git by default. A reviewed baseline can live in an external
 archive, or be copied into `benchmarks/baselines/` and committed with the relevant

@@ -12,6 +12,7 @@
     [pathling.dense-vector-fixtures :as dense-vectors]
     [pathling.fixtures :as fixtures]
     [pathling.scaling-fixtures :as scaling]
+    [pathling.staged-fixtures :as staged]
     [pathling.sequence-fixtures :as sequences])
   (:import [com.sun.management ThreadMXBean]
     [java.lang ProcessHandle]
@@ -50,7 +51,7 @@
       (throw (ex-info "Unknown benchmark options" {:options unknown})))
     (when-not (contains? profiles (:profile opts))
       (throw (ex-info "Profile must be :full, :quick, or :smoke" {})))
-    (when-not (#{:primary :secondary :comparison :all :sequence-updates :sparse-scaling :hash-map-traversal :vector-updates :dense-vector-updates :array-map-traversal} (:suite opts))
+    (when-not (#{:primary :secondary :comparison :staged-comparison :all :sequence-updates :sparse-scaling :hash-map-traversal :vector-updates :dense-vector-updates :array-map-traversal} (:suite opts))
       (throw (ex-info "Unknown benchmark suite" {:suite (:suite opts)})))
     (when-not (and (integer? (:seed opts))
                 (<= Long/MIN_VALUE (:seed opts) Long/MAX_VALUE))
@@ -74,6 +75,7 @@
               :primary fixtures/primary-operations
               :secondary fixtures/secondary-operations
               :comparison fixtures/comparison-operations
+              :staged-comparison staged/operations
               :all fixtures/all-operations
               :sequence-updates sequences/operations
               :sparse-scaling scaling/operations
@@ -299,7 +301,7 @@
 
 (defn run!
   "Options: :profile (:full default, :quick, :smoke), :suite (:primary default,
-   :secondary, :comparison, :all, :sequence-updates), :fixtures [...], :operations [...], :seed, :output (new
+   :secondary, :comparison, :staged-comparison, :all, :sequence-updates), :fixtures [...], :operations [...], :seed, :output (new
    directory), :label, :allocation-samples, :list?. See benchmarks/README.md."
   [requested]
   (let [opts (options requested)
@@ -323,6 +325,7 @@
           ;; Prepare and validate every selected case before recording timings.
           ;; Validation is repeated afterwards to catch state carried between calls.
           (let [[make-fixture prepare-cases] (case (:suite opts)
+                                             :staged-comparison [fixtures/make-fixture staged/prepare-cases]
                                              :sequence-updates [sequences/make-fixture sequences/prepare-cases]
                                              :sparse-scaling [scaling/make-fixture scaling/prepare-cases]
                                              :dense-vector-updates [dense-vectors/make-fixture dense-vectors/prepare-cases]

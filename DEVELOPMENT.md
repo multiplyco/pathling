@@ -7,6 +7,23 @@ changes substantially improve the intended map/vector workloads; small deep-scan
 and transducer costs remain documented tradeoffs. This completes that optimization
 round, not the scope of the next release. Release notes accumulate under Unreleased.
 
+The [controlled postwalk comparison](benchmarks/comparisons/2026-10-16-postwalk/README.md)
+is also complete: 240 full workers, 40 smoke checks and all captured-file checks
+passed. The refreshed README reports both the gains and the dense wide-vector
+transform case where postwalk wins. This closes the pending comparison work;
+the [custom traversal proposal](plans/custom-traversal.md) is deferred development.
+An additional [staged comparison](benchmarks/README.md#value-only-discovery-and-staged-collective-updates)
+now measures value-only `tree-seq` discovery and separate collection/replacement
+costs. User batch processing is excluded, and derived totals add stage estimates.
+The [completed post-reboot capture](benchmarks/comparisons/2026-10-19-staged/README.md)
+validated 300 full workers, 50 smoke checks and 4,247 captured-file checks. All
+28 timing comparisons with resolvable estimates favor Pathling in every paired
+round and block; two empty-replacement cases remain unresolved. Derived traversal
+totals favor Pathling by 45.36× on sparse mixed data, 8.92× on dense mixed data
+and 4.83× on the wide vector, excluding user batch work. The OS upgrade is an
+explicit environment boundary; interrupted and earlier measurements stay separate.
+This completes the benchmark-only extension without changing the library.
+
 The work began on 2026-09-15 following the correctness fixes in `74f0935`, with
 vector-update proposals added on 2026-10-09. Broader sequence reconstruction and
 extending native traversal to other scanners remain optional follow-up work.
