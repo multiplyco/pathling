@@ -6,8 +6,11 @@
                 :depends [compile:java]
                 :task    (shell "clj -M:dev -m nrepl.cmdline --interactive")}
 
-  test         {:doc     "Run all tests (CLJ + CLJS development and advanced builds)"
-                :depends [test:clj test:cljs test:cljs:release]}
+  test         {:doc     "Run library and release workflow tests (CLJ + CLJS development and advanced builds)"
+                :depends [test:clj test:cljs test:cljs:release test:build]}
+
+  test:build   {:doc  "Check release failure handling without publishing"
+                :task (shell "clojure -Srepro -T:build test-build")}
 
   test:clj     {:doc     "Run Clojure tests"
                 :depends [compile:java]
@@ -41,11 +44,14 @@
   install      {:doc  "Install JAR to local Maven repo"
                 :task (shell "clj -T:build install")}
 
-  tag          {:doc  "Create and push version tag"
-                :task (shell "clj -T:build tag")}
+  release:check {:doc "Run checks and build the release JAR without publishing"
+                 :task (shell "clojure -Srepro -T:build check-release")}
 
-  deploy       {:doc  "Tag, push, and deploy to Clojars"
-                :task (do (shell "clj -T:build tag") (shell "clj -T:build deploy"))}
+  tag          {:doc  "Validate and build, then create and push the version tag"
+                :task (shell "clojure -Srepro -T:build tag")}
+
+  deploy       {:doc  "Validate and build, then tag, push, and deploy the checked JAR"
+                :task (shell "clojure -Srepro -T:build deploy")}
 
   cljdoc       {:doc     "Test cljdoc analysis locally"
                 :depends [build]

@@ -20,7 +20,7 @@ Find and transform values in nested data structures.
 
 ```clojure
 ;; deps.edn
-co.multiply/pathling {:mvn/version "0.2.1"}
+co.multiply/pathling {:mvn/version "1.0.0"}
 ```
 
 ## Why Pathling?
@@ -70,20 +70,29 @@ back.
 ;    :nested {:deep {:type :task, :name "Review PR", :label "3 of 3"}}}
 ```
 
-By efficient means:
+Key properties:
 
-- It's pretty quick at scanning through a data structure.
-- It tries hard to not do unnecessary allocations as part of reading.
-- Once a navigation object has been constructed, transforming the values at the original locations is very fast.
+- **Targeted updates**: Build a navigation structure, then apply multiple updates efficiently as a separate step
+- **Bounded by nesting depth**: Stack usage follows structure depth, not match count; very deep inputs can overflow
+- **Allocation-friendly**: Navigation is retained only for matches and their ancestors; traversal and updates can also
+  allocate
+- **Transducer support**: `find-when` accepts transducers for transformation, filtering, and early termination
+- **`REMOVE` sentinel**: Conditionally remove elements during transformation
+- **Metadata preservation**: Collection metadata survives transformations
+- **Cross-platform**: Works in both Clojure and ClojureScript
 
-Performance depends on collection shape, match density and the task. The comparisons below measure the **unreleased
-`b227ede` implementation**, with Clojure 1.12.4, Corretto 26.0.2 and Criterium's full profile on an
-Intel Core i5-4590S. Each operation/fixture has six fresh JVM measurements in balanced orders. Times and allocated
-bytes are per call; timing figures are medians of JVM means. Ratios are comparator / Pathling, so values above one
-favor Pathling. The figures describe these implementations and inputs, not the published 0.2.1 release.
+## Performance
 
-**Finding values.** `find-when` versus value-only `tree-seq`, fully collected into a vector or nil. Measured on
-2026-10-19, using Ubuntu 26.04.1 / kernel 7.0.0-38 after the system upgrade:
+Pathling is particularly useful when a small part of a large structure needs updating, or when matches must be
+collected and processed together. The initial scan visits the structure; subsequent updates follow the recorded
+navigation and rebuild the affected collections, avoiding another full scan.
+
+The examples below use mixed structures containing maps, vectors, sets and lists: 3,906 value nodes with either
+31 matches (sparse) or 1,562 matches (dense). The wide vector has 10,000 leaves, all matching. Times and allocated
+bytes are per call. The time ratio is the comparator's time divided by Pathling's, so values above one favor Pathling.
+
+**Finding values.** `find-when` collects matching values without retaining navigation for updates. Here it is compared
+with value-only `tree-seq`, with both results fully collected into a vector or nil:
 
 | Input        | Pathling µs | tree-seq µs | Time ratio | Pathling bytes | tree-seq bytes |
 |--------------|------------:|------------:|-----------:|---------------:|---------------:|
@@ -91,8 +100,8 @@ favor Pathling. The figures describe these implementations and inputs, not the p
 | Large dense  |       108.0 |      2648.6 |     24.52× |         39,112 |      5,090,048 |
 | Wide vector  |       286.1 |      2240.7 |      7.83× |        223,544 |      4,800,468 |
 
-**Transforming independently.** Complete `transform-when` versus complete `postwalk`, including discovery and
-reconstruction. Measured on 2026-10-16, using Ubuntu 24.04.5 / kernel 6.8.0-139 before the upgrade:
+**Transforming independently.** `transform-when` finds and transforms values in one call. Both it and `postwalk`
+include discovery and reconstruction:
 
 | Input        | Pathling µs | Postwalk µs | Time ratio | Pathling bytes | Postwalk bytes |
 |--------------|------------:|------------:|-----------:|---------------:|---------------:|
@@ -100,14 +109,14 @@ reconstruction. Measured on 2026-10-16, using Ubuntu 24.04.5 / kernel 6.8.0-139 
 | Large dense  |       396.1 |       923.9 |      2.33× |        440,792 |      1,174,448 |
 | Wide vector  |       470.4 |       429.2 |      0.91× |        700,512 |        654,280 |
 
-The dense, flat vector is an important counterexample: this direct transform takes about **9.6% more time and
-7.1% more bytes with Pathling**. Postwalk wins in all six pairs. Neither implementation assumes a flat input;
-postwalk's sequential reconstruction fits the shape it encounters here.
+The dense vector illustrates the cost of navigation when every element changes in one pass: Pathling takes about
+**10% more time and allocates 7% more bytes than postwalk**. Sparse mixed data benefits much more, with substantially
+less work and allocation devoted to rebuilding the result.
 
-**Collecting, processing collectively, and replacing.** Measured on 2026-10-19. Pathling uses `path-when` and
-`update-paths`; the comparator uses value-only `tree-seq` and postwalk with a replacement cursor. Collection and
-replacement are timed separately. Both replacement stages receive the same prepared vector, and **user batch
-processing is excluded**. The total is the sum of stage medians, not a measured end-to-end call:
+**Collecting, processing collectively, and replacing.** Use `path-when` and `update-paths` when replacements depend
+on the collected matches. The comparator collects with value-only `tree-seq`, then uses `postwalk` to find the
+locations again and apply the prepared replacements. Collection and replacement are shown separately;
+**user batch processing is excluded**. Derived totals add the two stage estimates rather than timing an end-to-end call:
 
 | Input / stage                | Pathling µs | Comparator µs | Time ratio |
 |------------------------------|------------:|--------------:|-----------:|
@@ -121,37 +130,19 @@ processing is excluded**. The total is the sum of stage medians, not a measured 
 | Wide vector / replace        |       195.0 |         435.6 |      2.23× |
 | Wide vector / derived total  |       553.7 |        2676.3 |      4.83× |
 
-Totals use unrounded stage estimates. The comparator's collect rows are tree-seq; replace rows are postwalk.
-Every staged row above favors Pathling in all six matched rounds and all three blocks. On the wide vector,
-retained navigation now serves a required collective workflow; this is a different task from direct transformation.
+Retaining navigation pays off even on the wide vector when collective processing requires separate collection and
+replacement stages. This is the workflow Pathling was designed for: find the locations once, then use them to put
+the results back. The replacement cost still includes rebuilding the affected collections.
 
-Large mixed inputs have 3,906 value nodes and 31 / 1,562 matches respectively. The wide vector has 10,000 leaves,
-all matching. Only opaque leaves match. Tree-seq excludes map keys/entries; postwalk visits them. The captures
-have different OS/harness environments: compare implementations within each capture, not absolute times across
-them. Allocation varies between JVMs, and medians can fall between observed levels.
+Lower allocation can reduce GC pressure elsewhere in an application, though these benchmarks do not measure
+long-running application GC behavior. Performance depends on your data, predicate and match density; measure your
+workload when it matters. ClojureScript performance has not been measured in these comparisons.
 
-The [staged report](benchmarks/comparisons/2026-10-19-staged/README.md) and
-[direct postwalk report](benchmarks/comparisons/2026-10-16-postwalk/README.md) include all ten fixtures, stage
-allocation, observed ranges, every JVM result and methodology. Neither measures object counts, retained heap,
-user batch costs or long-running GC effects. The derived totals also exclude inter-stage cache/GC effects.
-
-Scanning visits the structure to find matches. Subsequent updates follow the recorded navigation, avoiding a full
-rescan; their cost also depends on rebuilding the affected collections. Sparse matches can therefore give a larger
-advantage over postwalk, which visits every node on each update.
-
-Note that efficiency claims are mostly about Clojure. Less attention has been given to the ClojureScript equivalent, and
-it could be improved from its current state.
-
-Key properties:
-
-- **Targeted updates**: Build a navigation structure, then apply multiple updates efficiently as a separate step
-- **Bounded by nesting depth**: Stack usage follows structure depth, not match count; very deep inputs can overflow
-- **Allocation-friendly**: Navigation is retained only for matches and their ancestors; traversal and updates can also
-  allocate
-- **Transducer support**: `find-when` accepts transducers for transformation, filtering, and early termination
-- **`REMOVE` sentinel**: Conditionally remove elements during transformation
-- **Metadata preservation**: Collection metadata survives transformations
-- **Cross-platform**: Works in both Clojure and ClojureScript
+Measured on an Intel Core i5-4590S with 16 GB RAM, Clojure 1.12.4 and Amazon Corretto 26.0.2. The
+[finding and collective-update report](benchmarks/comparisons/2026-10-19-staged/README.md) and
+[direct-transform report](benchmarks/comparisons/2026-10-16-postwalk/README.md) include additional input shapes,
+per-stage allocations, variability and methodology. See the [benchmark guide](benchmarks/README.md) to reproduce
+the measurements.
 
 ## API
 
@@ -369,7 +360,8 @@ removing the `:tag` field converts it.
 
 ## Correctness checks
 
-`bb test` runs the JVM tests and the ClojureScript browser suite in both development and advanced compilation modes.
+`bb test` runs the JVM tests, release workflow tests, and the ClojureScript browser suite in both development and
+advanced compilation modes.
 For individual checks, use `bb test:clj`, `bb test:cljs`, or `bb test:cljs:release`. `bb bench:check` additionally checks
 the benchmark fixtures and harness without running performance measurements.
 

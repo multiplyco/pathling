@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.0 - 2026-10-22
 
 ### Fixed
 
@@ -16,6 +16,8 @@
   such edits now produce an ordinary map instead of ignoring keys or replacing removed values with nil.
 - Correct the documented `acc-set!` return value and specify traversal, replacement-length, collision and
   reconstruction contracts.
+- Keep helper macros on the compilation host to avoid undeclared-variable warnings from the standalone
+  ClojureScript compiler.
 
 ### Changed
 
@@ -33,6 +35,8 @@
   scaling, map and vector suites, including a pinned Clojure 1.13 comparison runtime.
 - Controlled postwalk and value-only tree-seq comparisons, including separate collection/replacement timing and
   allocation, derived traversal totals and per-JVM variation, replacing the older README figures.
+- A release check task and tested publication ordering: validate and build before pushing a tag, stop on command
+  failures, and publish the checked artifact from an unchanged clean checkout.
 
 ## 0.2.1 - 2025-01-30
 

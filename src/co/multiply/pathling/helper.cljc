@@ -16,22 +16,24 @@
 
 ;; # Collection utilities
 ;; ################################################################################
-(defmacro forv
-  "Like `for`, but returns a vector. No bells and whistles."
-  [[bind-to coll] & body]
-  `(mapv (fn [~bind-to] ~@body) ~coll))
+#?(:clj
+   (defmacro forv
+     "Like `for`, but returns a vector. No bells and whistles."
+     [[bind-to coll] & body]
+     `(mapv (fn [~bind-to] ~@body) ~coll)))
 
 
-(defmacro with-transient
-  "Execute body with a transient version of the collection, then `persistent!`.
+#?(:clj
+   (defmacro with-transient
+     "Execute body with a transient version of the collection, then `persistent!`.
    Preserves metadata from the original collection."
-  [[k v] & body]
-  `(let [~k ~v
-         metadata# (meta ~k)]
-     (-> (let [~k (transient ~k)]
-           ~@body)
-       (persistent!)
-       (with-meta metadata#))))
+     [[k v] & body]
+     `(let [~k ~v
+            metadata# (meta ~k)]
+        (-> (let [~k (transient ~k)]
+              ~@body)
+          (persistent!)
+          (with-meta metadata#)))))
 
 
 (defn cohorts
@@ -69,8 +71,9 @@
 
 ;; # Protocol extension
 ;; ################################################################################
-(defmacro extend-protocol-many
-  "Extend a protocol to multiple types with the same implementation.
+#?(:clj
+   (defmacro extend-protocol-many
+     "Extend a protocol to multiple types with the same implementation.
    Supports multiple type groups, each with their own method implementations.
 
    Usage:
@@ -85,10 +88,10 @@
      (method1 [this] ...)
      (method2 [this x] ...))
    ```"
-  [protocol & groups]
-  (let [chrts (cohorts (fn [v _prev] (vector? v)) groups)]
-    `(extend-protocol ~protocol
-       ~@(into [] (comp cat cat)
-           (forv [[types & impls] chrts]
-             (forv [type types]
-               `(~type ~@impls)))))))
+     [protocol & groups]
+     (let [chrts (cohorts (fn [v _prev] (vector? v)) groups)]
+       `(extend-protocol ~protocol
+          ~@(into [] (comp cat cat)
+              (forv [[types & impls] chrts]
+                (forv [type types]
+                  `(~type ~@impls))))))))

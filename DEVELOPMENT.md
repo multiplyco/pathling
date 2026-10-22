@@ -4,8 +4,8 @@ This records the correctness and JVM optimization work completed through `b227ed
 The final comparison against the original baseline validated all 30 primary cases
 and four additional controls, with six fresh JVMs per version/case. The accepted
 changes substantially improve the intended map/vector workloads; small deep-scan
-and transducer costs remain documented tradeoffs. This completes that optimization
-round, not the scope of the next release. Release notes accumulate under Unreleased.
+and transducer costs remain documented tradeoffs. These optimizations and the
+subsequent correctness hardening are covered by the [1.0.0 release notes](CHANGELOG.md).
 
 The [controlled postwalk comparison](benchmarks/comparisons/2026-10-16-postwalk/README.md)
 is also complete: 240 full workers, 40 smoke checks and all captured-file checks
@@ -50,6 +50,38 @@ vector-update proposals added on 2026-10-09. Broader sequence reconstruction and
 extending native traversal to other scanners remain optional follow-up work.
 Apply the [implementation priorities](README.md#implementation-priorities)
 when evaluating them.
+
+## Preparing and publishing a release
+
+Development checks require JDK 21+, Clojure CLI, Babashka, Bun, Chrome and cljstyle.
+Install the browser-test dependencies with `bun install --frozen-lockfile`.
+Browser tests use `127.0.0.1:9876` (or the next available port), independently of
+application `PORT`, `IP` and `LISTEN_ADDR` variables inherited from the shell.
+
+Run `bb release:check` to check formatting, run the JVM, CLJS development/advanced
+and release-workflow tests, check the benchmark fixtures/harness, and build the
+JAR. This task runs no performance measurements and publishes nothing. It accepts
+uncommitted changes so a proposed release can be checked before committing.
+`bb test:build` runs just the release-workflow tests, including real subprocess
+checks in a temporary Git repository. Tagging, pushing and Clojars deployment
+are replaced in the tests; the project's Git refs and remote repositories are
+not modified.
+
+For publication, set the version in `build.clj` and the README installation
+example, date the changelog entry, and commit the release changes. Then run
+`bb deploy` with the Clojars credentials in
+`CLOJARS_DEPLOY_MAVEN_USERNAME` and `CLOJARS_DEPLOY_MAVEN_PASSWORD`.
+
+`bb deploy` requires a clean checkout, runs the checks and build, verifies that
+the checkout and HEAD have not changed, creates and pushes the version tag at
+that checked commit, and deploys the same JAR without rebuilding it. A failed
+check, build, tag or push stops subsequent steps. `bb tag` performs the same
+validation but only creates and pushes the tag; it is not a prerequisite for
+`bb deploy`. The corresponding `clojure -T:build` tasks enforce the same checks.
+
+Tag pushing and Clojars deployment are separate operations. If publication fails
+after creating or pushing a tag, inspect the local/remote state before retrying;
+the tasks do not overwrite existing tags or undo a completed publication.
 
 ## 1. Implemented: avoid materializing sequences for collection-only updates
 
