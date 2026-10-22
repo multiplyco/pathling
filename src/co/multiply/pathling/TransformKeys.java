@@ -160,7 +160,8 @@ public final class TransformKeys {
     }
 
     private static Nav.Updatable navMapStruct(PersistentStructMap m, IFn pred) {
-        ArrayList<Nav.Val> childNavs = null;
+        ArrayList<Nav.KeyNav> childNavs = null;
+        boolean hasKeyTransforms = false;
 
         Iterator<?> iter = RT.iter(RT.keys(m));
         while (iter.hasNext()) {
@@ -168,15 +169,23 @@ public final class TransformKeys {
             Object v = m.valAt(k);
 
             Nav.Updatable nav = navWhen(v, pred);
-            if (nav != null) {
+            boolean termK = RT.booleanCast(pred.invoke(k));
+            if (termK) hasKeyTransforms = true;
+            if (nav != null || termK) {
                 if (childNavs == null) childNavs = new ArrayList<>();
-                childNavs.add(new Nav.Val(k, nav));
+                if (nav != null && termK) {
+                    childNavs.add(new Nav.KeyVal(k, nav));
+                } else if (nav != null) {
+                    childNavs.add(new Nav.Val(k, nav));
+                } else {
+                    childNavs.add(new Nav.Key(k));
+                }
             }
         }
 
         boolean predRes = RT.booleanCast(pred.invoke(m));
         if (childNavs != null || predRes) {
-            return new Nav.MapStruct(childNavs, predRes);
+            return new Nav.MapStruct(childNavs, predRes, hasKeyTransforms);
         }
         return null;
     }

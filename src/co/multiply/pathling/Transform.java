@@ -137,7 +137,7 @@ public final class Transform {
 
         boolean predRes = RT.booleanCast(pred.invoke(m));
         if (childNavs != null || predRes) {
-            return new Nav.MapStruct(childNavs, predRes);
+            return new Nav.MapStruct(childNavs, predRes, false);
         }
         return null;
     }

@@ -3,7 +3,7 @@
    Uses ArrayList on CLJ, JS array on CLJS."
   #?(:cljs (:require-macros co.multiply.pathling.accumulator))
   #?(:clj (:import [clojure.lang Sequential]
-                   [java.util ArrayList])))
+            [java.util ArrayList])))
 
 
 (defmacro ^:private if-cljs
@@ -69,7 +69,7 @@
 
 
 (defmacro acc-set!
-  "Set element at index position in the accumulator. Returns the value."
+  "Set element at index position in the accumulator. Returns the accumulator."
   [acc idx v]
   (if-cljs
     `(doto ~acc (aset ~idx ~v))

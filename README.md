@@ -14,7 +14,7 @@ Find and transform values in nested data structures.
 
 **ClojureScript:**
 
-- Any
+- Tested with ClojureScript 1.12.134 in development and advanced compilation modes.
 
 ## Installation
 
@@ -186,6 +186,11 @@ Options:
 - `:include-keys` - When true, also match map keys (default: false)
 - `:raw-matches` - When true, return the internal mutable accumulator instead of a vector (default: false)
 
+Traversal visits children before their collection. With `:include-keys`, each entry's value subtree comes before
+its key; the key is tested as a whole rather than recursively traversed. Predicates see the original values and
+collections. Map and set order follows the input collection, so do not assume identical order across runtimes or
+collection implementations.
+
 ### `update-paths`
 
 Apply replacements to all locations identified by a navigation structure.
@@ -206,6 +211,17 @@ The third argument can be either a function or a collection of replacement value
 
 When using a collection, values are consumed sequentially in the same depth-first order that `path-when` found them.
 This enables patterns where you transform matches externally and pass the results back.
+
+Provide a vector or raw accumulator for portable positional replacement. A missing replacement throws when it is
+consumed; trailing replacements are ignored. A `nil` navigation returns the original data without reading any
+replacements. Do not mutate a replacement accumulator concurrently with an update.
+
+Function replacements receive children before their parent, and see each matched parent with its child updates
+already applied. The replacement function's result is used as supplied, including its metadata.
+
+If updated map entries produce the same key, the last surviving updated entry in traversal order wins. An updated
+entry can also overwrite an untouched entry at its new key. Sets collapse equal replacement values. Sorted
+collections use their comparator's notion of equivalent keys or members.
 
 ### `find-when`
 
@@ -290,7 +306,12 @@ Behavior by collection type:
 - **Sets**: element is not added to result
 - **Vectors/Lists**: element is removed and indices collapse
 
-## Zero-Allocation Update Pattern
+Removing a struct-map base entry converts that struct to an ordinary map; see the collection rules below.
+When the root itself is removed, the result is `REMOVE`, since there is no parent collection to remove it from.
+Use `p/REMOVE` directly: it is an opaque sentinel, not a keyword or a serialized value.
+It is reserved for replacement results. Storing it as ordinary input data is unsupported and is not validated.
+
+## Reusing the Match Accumulator
 
 For performance-critical code, the `:raw-matches` option returns the internal mutable accumulator (`ArrayList` on JVM,
 JS array on ClojureScript) instead of converting to a vector. You can mutate this accumulator in-place with replacement
@@ -309,6 +330,8 @@ values and pass it directly to `update-paths`:
 
 This eliminates the intermediate vector allocation and is useful when processing large numbers of matches. The
 accumulator macros (`acc-get`, `acc-set!`, `acc-size`) work cross-platform.
+`acc-set!` mutates the element and returns the accumulator. Reusing it avoids the replacement-vector allocation;
+reconstructing updated persistent collections still allocates.
 
 ## Metadata Preservation
 
@@ -322,15 +345,33 @@ Collection metadata is preserved through transformations:
 
 ## Collection Type Support
 
-Pathling handles all standard Clojure collections:
+Pathling traverses these Clojure and ClojureScript collections:
 
-- **Maps**: hash-map, array-map, sorted-map, struct-map
-- **Vectors**: regular vectors and subvec
+- **Maps**: hash-map, array-map, sorted-map, records, and JVM struct maps
+- **Vectors**: regular vectors, subvec, and standalone map entries (as two-element vectors)
 - **Sets**: hash-set, sorted-set
-- **Sequences**: lists, lazy seqs, ranges, etc.
+- **Sequences**: lists, lazy seqs, ranges, queues, `keys`, `vals`, and map sequences
 - **Scalars**: primitives, nil, and opaque values (treated as leaves)
 
 Sorted collections (sorted-map, sorted-set) preserve their type and comparator through transformations.
+Sequence child updates reconstruct a list, even when the input was a lazy sequence, range or queue. A collection-only
+replacement receives the original collection. Standalone map entries may become vectors. Host arrays and objects
+are opaque leaves; accepting a raw JS array as *replacements* does not make it a traversable input collection.
+
+Records are scanned as maps on both platforms. Value-only updates preserve their record type. Removing a declared
+record field, or matching and transforming record keys, can produce an ordinary map.
+
+JVM struct maps preserve their basis, type and metadata for value-only updates and unchanged keys. Renaming or
+removing a base key converts only that affected struct to an ordinary map, retaining metadata. Extension entries
+can be renamed or removed without conversion. `find-when`, `path-when`, and `transform-when` all honor `:include-keys`
+for struct maps. For example, changing a `clojure.xml` element's `:tag` value preserves its struct type; renaming or
+removing the `:tag` field converts it.
+
+## Correctness checks
+
+`bb test` runs the JVM tests and the ClojureScript browser suite in both development and advanced compilation modes.
+For individual checks, use `bb test:clj`, `bb test:cljs`, or `bb test:cljs:release`. `bb bench:check` additionally checks
+the benchmark fixtures and harness without running performance measurements.
 
 ## Implementation priorities
 

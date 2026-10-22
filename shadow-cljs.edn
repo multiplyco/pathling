@@ -1,4 +1,7 @@
 {:deps   {:aliases [:test :shadow-cljs]}
  :builds {:ci {:target    :karma
                :output-to "target/ci.js"
-               :ns-regexp "pathling.*"}}}
+               :ns-regexp "pathling.*"}
+          :ci-release {:target    :karma
+                       :output-to "target/ci-release.js"
+                       :ns-regexp "pathling.*"}}}

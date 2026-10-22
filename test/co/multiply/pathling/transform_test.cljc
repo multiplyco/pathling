@@ -128,49 +128,6 @@
       (is (= [2 6 10 14 18] (seq result))))))
 
 
-#?(:clj (deftest struct-map-keys-ignored-test
-          (testing "Struct map keys are never transformed, even with include-keys"
-            (let [s      (create-struct :a :b)
-                  data   (struct-map s :a 1 :b 2)
-                  ;; Try to transform keys - should be ignored for struct maps
-                  result (p/transform-when data keyword? name {:include-keys true})]
-              ;; Keys remain as keywords (not transformed to strings)
-              (is (= {:a 1 :b 2} result))
-              (is (every? keyword? (keys result)))))
-
-          (testing "Struct map values can still be transformed"
-            (let [s      (create-struct :a :b)
-                  data   (struct-map s :a 1 :b 2)
-                  result (p/transform-when data number? inc)]
-              (is (= {:a 2 :b 3} result))))
-
-          (testing "path-when with struct map ignores keys"
-            (let [s    (create-struct :a :b)
-                  data (struct-map s :a 1 :b 2)
-                  {:keys [matches]} (p/path-when data keyword? {:include-keys true})]
-              ;; Only values (numbers) would match, NOT keys - but we're looking for keywords
-              ;; So no matches at all since keys are ignored
-              (is (nil? matches))))
-
-          (testing "path-when with struct map finds values"
-            (let [s    (create-struct :a :b)
-                  data (struct-map s :a 1 :b 2)
-                  {:keys [matches]} (p/path-when data number?)]
-              ;; Values should still be found
-              (is (= 2 (count matches)))
-              (is (every? number? matches))))
-
-          (testing "Nested struct maps with include-keys"
-            (let [s      (create-struct :x :y)
-                  data   {:outer (struct-map s :x 1 :y 2)}
-                  result (p/transform-when data keyword? name {:include-keys true})]
-              ;; Outer map key :outer is transformed
-              ;; But struct map keys :x and :y are NOT transformed
-              (is (= {"outer" {:x 1 :y 2}} result))
-              (is (string? (first (keys result))))
-              (is (every? keyword? (keys (get result "outer"))))))))
-
-
 ;; REMOVE sentinel tests
 ;; #######################################
 

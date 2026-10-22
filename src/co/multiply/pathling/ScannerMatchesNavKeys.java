@@ -174,21 +174,33 @@ public final class ScannerMatchesNavKeys {
     }
 
     /**
-     * Scan struct maps. Keys are fixed, never transform keys.
-     * Always returns MapStruct.
+     * Scan struct-map values and keys in the usual order. MapStruct decides
+     * whether the actual replacements require conversion to an ordinary map.
      */
     private static Nav.Updatable pathMapStruct(PersistentStructMap m, ArrayList<Object> matches, IFn pred) {
         Iterator<?> iter = RT.iter(RT.keys(m));
-        ArrayList<Nav.Val> childNavs = null;
+        ArrayList<Nav.KeyNav> childNavs = null;
+        boolean hasKeyTransforms = false;
 
         while (iter.hasNext()) {
             Object k = iter.next();
             Object v = m.valAt(k);
             Nav.Updatable nav = pathWhenInternal(v, matches, pred);
+            boolean termK = RT.booleanCast(pred.invoke(k));
 
-            if (nav != null) {
+            if (termK) {
+                matches.add(k);
+                hasKeyTransforms = true;
+            }
+            if (nav != null || termK) {
                 if (childNavs == null) childNavs = new ArrayList<>();
-                childNavs.add(new Nav.Val(k, nav));
+                if (nav != null && termK) {
+                    childNavs.add(new Nav.KeyVal(k, nav));
+                } else if (nav != null) {
+                    childNavs.add(new Nav.Val(k, nav));
+                } else {
+                    childNavs.add(new Nav.Key(k));
+                }
             }
         }
 
@@ -196,7 +208,7 @@ public final class ScannerMatchesNavKeys {
         if (predRes) matches.add(m);
 
         if (childNavs != null || predRes) {
-            return new Nav.MapStruct(childNavs, predRes);
+            return new Nav.MapStruct(childNavs, predRes, hasKeyTransforms);
         }
         return null;
     }

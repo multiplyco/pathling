@@ -27,6 +27,12 @@
    - Sets: the element is not added to the result
    - Vectors/Lists: the element is removed and indices collapse
 
+   Removing a struct-map base entry converts that struct to an ordinary map.
+   If the root itself is removed, the result is `REMOVE` (there is no parent).
+   Use this opaque value directly; it has no keyword or serialized representation.
+   It is reserved for replacement results. Storing it as ordinary input data is
+   unsupported; no validation is performed for that case.
+
    Example:
 
    ```clojure
@@ -59,6 +65,8 @@
    when the same accumulator returned by `path-when` with `:raw-matches true`
    has been mutated in-place with replacement values.
    Supply one replacement per match, in the order returned by `path-when`.
+   Missing replacements throw when consumed; trailing replacements are ignored.
+   A nil navigation returns the original data without consuming replacements.
    Do not mutate the replacement collection concurrently with the update.
 
    If the replacement is `REMOVE`, the element is removed from its parent collection:
@@ -66,6 +74,18 @@
    - Maps: key-value pair is dissoc'd
    - Sets: element is not added to result
    - Vectors/Lists: element is removed and indices collapse
+
+   Struct maps retain their type unless a base key is renamed or removed, in
+   which case the affected struct becomes an ordinary map. Extension entries can
+   change without conversion. Records retain their type for value-only updates;
+   removing a record field or transforming record keys can produce an ordinary map.
+   Updated sequences are reconstructed as lists. Metadata and sorted comparators
+   are preserved on reconstructed collections; a final parent replacement is
+   returned as supplied, with its own metadata.
+
+   Key collisions use the last surviving updated entry in traversal order;
+   updated entries can overwrite untouched entries. Sets collapse equal results.
+   Removing the root returns `REMOVE`.
 
    Example with function:
 
@@ -121,6 +141,12 @@
 
    Returns `nil` if no matches found.
 
+   Traversal is depth-first, children before their collection. With key matching,
+   visit an entry's value subtree before its key; the key is tested as a whole,
+   not recursively scanned. Map/set order follows the input collection and is
+   not guaranteed to be the same across runtimes or collection implementations.
+   Predicates inspect original values, including original collections.
+
    Retain `nav` and pass it unchanged to `update-paths` with the scanned input.
    Do not depend on its concrete type, fields, or representation. Java internals
    are not part of the supported public API.
@@ -175,6 +201,7 @@
      - `:include-keys` - When true, also match and collect map keys (default: false)
 
    Supports early termination with transducers like `(take n)`.
+   Traversal order and key handling are the same as `path-when`.
    Transducers must complete to a collection or `nil`. Completion results are
    returned as a vector, or `nil` when empty; scalar completion results are errors.
 
@@ -217,6 +244,7 @@
 
    If `tf` returns `REMOVE`, the element is removed from its parent collection.
    Returns data unchanged if no matches found.
+   Reconstruction, key collisions and root removal follow `update-paths`.
 
    Options:
 

@@ -235,14 +235,14 @@
       (is (= {:outer [2 3 4]} result))
       (is (= {:inner true} (meta (:outer result))))))
 
-  #?(:clj (testing "PersistentStructMap is converted and metadata preserved"
+  #?(:clj (testing "PersistentStructMap values and metadata are preserved"
             (let [s      (create-struct :a :b)
                   data   (with-meta (struct-map s :a 1 :b 2) {:legacy true})
                   {:keys [nav]} (p/path-when data number?)
                   result (p/update-paths data nav inc)]
               ;; Should work without throwing ClassCastException
               (is (= {:a 2 :b 3} result))
-              ;; Metadata should be preserved through conversion
+              ;; Metadata should be preserved through reconstruction
               (is (= {:legacy true} (meta result)))))))
 
 

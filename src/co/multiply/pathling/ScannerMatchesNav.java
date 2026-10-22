@@ -136,8 +136,8 @@ public final class ScannerMatchesNav {
     }
 
     /**
-     * Scan struct maps. Keys are fixed, never transform keys.
-     * Always returns MapStruct.
+     * Scan struct-map values. MapStruct preserves the basis unless a base entry
+     * is removed, in which case it produces an ordinary persistent map.
      */
     private static Nav.Updatable pathMapStruct(PersistentStructMap m, ArrayList<Object> matches, IFn pred, HashMapReducer hashMaps) {
         Iterator<?> iter = RT.iter(RT.keys(m));
@@ -158,7 +158,7 @@ public final class ScannerMatchesNav {
         if (predRes) matches.add(m);
 
         if (childNavs != null || predRes) {
-            return new Nav.MapStruct(childNavs, predRes);
+            return new Nav.MapStruct(childNavs, predRes, false);
         }
         return null;
     }

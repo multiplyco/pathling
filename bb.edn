@@ -6,17 +6,22 @@
                 :depends [compile:java]
                 :task    (shell "clj -M:dev -m nrepl.cmdline --interactive")}
 
-  test         {:doc     "Run all tests (CLJ + CLJS)"
-                :depends [test:clj test:cljs]}
+  test         {:doc     "Run all tests (CLJ + CLJS development and advanced builds)"
+                :depends [test:clj test:cljs test:cljs:release]}
 
   test:clj     {:doc     "Run Clojure tests"
                 :depends [compile:java]
                 :task    (shell "clj -M:test -m kaocha.runner")}
 
-  test:cljs    {:doc  "Run ClojureScript tests"
+  test:cljs    {:doc  "Run ClojureScript tests in development mode"
                 :task (do
                         (shell "bunx shadow-cljs compile ci")
                         (shell "bunx karma start --single-run"))}
+
+  test:cljs:release {:doc "Run ClojureScript tests with advanced compilation"
+                     :task (do
+                             (shell "bunx shadow-cljs release ci-release")
+                             (shell "env PATHLING_CLJS_TEST_FILE=ci-release.js bunx karma start --single-run"))}
 
   bench:check  {:doc     "Compile and check library + benchmark correctness on the benchmark classpath"
                 :depends [compile:java]

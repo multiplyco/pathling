@@ -24,6 +24,27 @@ and 4.83× on the wide vector, excluding user batch work. The OS upgrade is an
 explicit environment boundary; interrupted and earlier measurements stay separate.
 This completes the benchmark-only extension without changing the library.
 
+Subsequent release hardening fixes CLJS collection fallback and removal-sentinel
+behavior, checks both development and advanced compilation, and documents the
+public traversal/replacement contracts. JVM struct maps now expose their keys
+consistently across scanners: value edits and unchanged base keys preserve the
+struct, while renaming or removing a base key converts the affected struct to
+an ordinary map. Extension edits preserve the basis. These changes have correctness
+coverage, including `clojure.xml` elements; the saved performance reports still
+describe their original measured snapshots, not these subsequent changes.
+
+A focused JVM spillover check covered six non-struct controls with 48 full
+measurements. It found no broad regression, but a 2.93% median slowdown in sparse
+hash-map scanning prompted a 24-measurement confirmation with a deep-scan control.
+The confirmation used six fresh JVMs per version/case: hash-map scanning was
+1.45% faster by median and 0.60% faster by mean, with three pairs faster and three
+slower. Deep scanning was essentially flat (0.49% faster by median), and allocation
+was unchanged in both cases. The initial and confirmation captures used different
+host configurations and remain separate; the earlier slowdown did not reproduce
+in the current configuration, and its cause remains unresolved.
+This completes the focused JVM spillover check without establishing a speedup or
+measuring CLJS performance.
+
 The work began on 2026-09-15 following the correctness fixes in `74f0935`, with
 vector-update proposals added on 2026-10-09. Broader sequence reconstruction and
 extending native traversal to other scanners remain optional follow-up work.

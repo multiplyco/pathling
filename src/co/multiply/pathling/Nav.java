@@ -213,28 +213,93 @@ public final class Nav {
     }
 
     /**
-     * Navigation for struct maps (fixed keys, no dissoc, no transients).
-     * Only contains Val entries since struct maps have fixed keys.
+     * Navigation for struct maps. Preserve their basis unless an update removes
+     * or renames a base key; such an update produces an ordinary persistent map.
      */
-    public record MapStruct(ArrayList<Val> children, boolean terminal) implements Updatable {
+    public record MapStruct(ArrayList<? extends KeyNav> children, boolean terminal, boolean hasKeyTransforms) implements Updatable {
         @Override
         public Object applyUpdates(Object data, Replacer r) {
             IPersistentMap m = (IPersistentMap) data;
-            Object updated;
-            if (children != null) {
-                IPersistentMap result = m;
-                int n = children.size();
-                for (int i = 0; i < n; i++) {
-                    Val v = children.get(i);
-                    Object value = v.child().applyUpdates(RT.get(m, v.key()), r);
-                    // Struct maps don't support dissoc, so REMOVE becomes assoc nil
-                    result = result.assoc(v.key(), value == REMOVE ? null : value);
-                }
-                updated = result;
-            } else {
-                updated = m;
-            }
+            Object updated = children == null ? m
+                : hasKeyTransforms ? applyKeyUpdates(m, r) : applyValueUpdates(m, r);
             return terminal ? r.replace(updated) : updated;
+        }
+
+        private IPersistentMap applyValueUpdates(IPersistentMap m, Replacer r) {
+            IPersistentMap result = m;
+            IPersistentMap baseKeys = null;
+            // Ordinary value updates need no staging buffers or basis lookup.
+            for (int i = 0, n = children.size(); i < n; i++) {
+                Val child = (Val) children.get(i);
+                Object value = child.child().applyUpdates(RT.get(m, child.key()), r);
+                if (value == REMOVE) {
+                    if (result instanceof PersistentStructMap) {
+                        if (baseKeys == null) baseKeys = (IPersistentMap) m.empty();
+                        if (baseKeys.containsKey(child.key())) result = ordinaryMap(result);
+                    }
+                    result = result.without(child.key());
+                } else {
+                    result = result.assoc(child.key(), value);
+                }
+            }
+            return result;
+        }
+
+        private IPersistentMap applyKeyUpdates(IPersistentMap m, Replacer r) {
+            int n = children.size();
+            Object[] keys = new Object[n];
+            Object[] values = new Object[n];
+            IPersistentMap baseKeys = null;
+            boolean convert = false;
+
+            // Evaluate once, in scan order, against the original entries.
+            // Stage results so swaps/collisions cannot overwrite unread input.
+            for (int i = 0; i < n; i++) {
+                KeyNav child = children.get(i);
+                Object key = keyOf(child);
+                Object value = switch (child) {
+                    case Val v -> v.child().applyUpdates(RT.get(m, key), r);
+                    case Key k -> RT.get(m, key);
+                    case KeyVal kv -> kv.child().applyUpdates(RT.get(m, key), r);
+                };
+                Object newKey = child instanceof Val ? key : r.replace(key);
+                keys[i] = newKey;
+                values[i] = value;
+                if (!convert && (value == REMOVE || newKey == REMOVE || !Util.equiv(key, newKey))) {
+                    // empty() on a struct retains exactly its base keys.
+                    // Use its public collection API rather than private fields.
+                    if (baseKeys == null) baseKeys = (IPersistentMap) m.empty();
+                    convert = baseKeys.containsKey(key);
+                }
+            }
+
+            IPersistentMap result = convert ? ordinaryMap(m) : m;
+            // Remove changed original keys before inserting any replacements.
+            // Equal, unchanged base keys must stay associated with the basis.
+            for (int i = 0; i < n; i++) {
+                Object key = keyOf(children.get(i));
+                if (values[i] == REMOVE || keys[i] == REMOVE || !Util.equiv(key, keys[i])) {
+                    result = result.without(key);
+                }
+            }
+            for (int i = 0; i < n; i++) {
+                if (values[i] != REMOVE && keys[i] != REMOVE) {
+                    result = result.assoc(keys[i], values[i]);
+                }
+            }
+            return result;
+        }
+
+        private static IPersistentMap ordinaryMap(IPersistentMap m) {
+            return (IPersistentMap) withMeta(PersistentHashMap.create((java.util.Map<?, ?>) m), RT.meta(m));
+        }
+
+        private static Object keyOf(KeyNav child) {
+            return switch (child) {
+                case Val v -> v.key();
+                case Key k -> k.key();
+                case KeyVal kv -> kv.key();
+            };
         }
     }
 

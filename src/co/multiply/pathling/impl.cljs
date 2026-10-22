@@ -6,23 +6,8 @@
 
 ;; # REMOVE sentinel
 ;; ################################################################################
-(def REMOVE
-  "Sentinel value that signals removal of an element from its parent collection.
-   Return this from an `update-paths` transform function to remove the element.
-
-   Behavior by collection type:
-
-   - Maps: the key-value pair is removed (`dissoc`)
-   - Sets: the element is not added to the result
-   - Vectors/Lists: the element is removed and indices collapse
-
-   Example:
-
-   ```clojure
-   (transform-when data number? #(if (neg? %) REMOVE (inc %)))
-   ;; Removes negative numbers, increments positive ones
-   ```"
-  ::remove)
+(defonce ^{:doc "Identity-unique removal sentinel, stable across hot reloads."}
+  REMOVE (js-obj))
 
 
 ;; # IReplacer protocol
@@ -41,6 +26,8 @@
   IReplacer
   (-replace [_ _]
     (let [i idx]
+      (when (>= i (alength arr))
+        (throw (js/RangeError. "Not enough replacement values")))
       (set! idx (inc i))
       (aget arr i))))
 
@@ -106,7 +93,7 @@
 ;; ========================================================================
 ;; Collection-level: record path through collections
 (deftype NavMapEdit [children term])
-(deftype NavMapPersistent [children term])
+(deftype NavMapPersistent [children term key-transforms?])
 (deftype NavMapStruct [children term])
 (deftype NavVecEdit [children term])
 (deftype NavVecPersistent [children term])
@@ -151,10 +138,10 @@
         (when pred-res
           (acc/acc-append! matches this))
         (cond
-          did-term-k (NavMapPersistent. child-navs pred-res)
+          did-term-k (NavMapPersistent. child-navs pred-res true)
           child-navs (if (helper/editable? this)
                        (NavMapEdit. child-navs pred-res)
-                       (NavMapPersistent. child-navs pred-res))
+                       (NavMapPersistent. child-navs pred-res false))
           pred-res (NavMapEdit. nil pred-res)
           :else nil)))))
 
@@ -343,8 +330,22 @@
   (scan-when [this add-match pred _opts] (scan-scalar this add-match pred))
 
   default
-  (path-when [this matches pred opts] (path-scalar this matches pred opts))
-  (scan-when [this add-match pred _opts] (scan-scalar this add-match pred)))
+  (path-when [this matches pred opts]
+    ;; Protocol-based fallback covers records and collection implementations not
+    ;; named above, including new core sequence types. Host objects remain leaves.
+    (cond
+      (map? this) (path-map this matches pred opts)
+      (vector? this) (path-vector this matches pred opts)
+      (set? this) (path-set this matches pred opts)
+      (or (seq? this) (sequential? this)) (path-sequential this matches pred opts)
+      :else (path-scalar this matches pred opts)))
+  (scan-when [this add-match pred opts]
+    (cond
+      (map? this) (scan-map this add-match pred opts)
+      (vector? this) (scan-vector this add-match pred opts)
+      (set? this) (scan-set this add-match pred opts)
+      (or (seq? this) (sequential? this)) (scan-sequential this add-match pred opts)
+      :else (scan-scalar this add-match pred))))
 
 
 ;; ## IApplyUpdates implementations for CLJS nav types
@@ -405,11 +406,15 @@
 (extend-type NavMapPersistent
   IApplyUpdates
   (apply-updates [this data r]
-    (let [children (.-children this)
-          term     (.-term this)
+    (let [children        (.-children this)
+          term            (.-term this)
+          key-transforms? (.-key-transforms? this)
           updated  (if children
                      (let [n (acc/acc-size children)]
-                       (loop [i 0, m (strip-nav-keys-from-map data children)]
+                       ;; Value-only updates must not dissoc record fields.
+                       (loop [i 0, m (if key-transforms?
+                                       (strip-nav-keys-from-map data children)
+                                       data)]
                          (if (< i n)
                            (let [^NavKey nav-key (acc/acc-get children i)
                                  old-k           (.-arg nav-key)
@@ -421,7 +426,7 @@
                                  new-k           (if (.-term nav-key) (-replace r old-k) old-k)]
                              (recur (inc i)
                                (if (or (identical? new-k REMOVE) (identical? result REMOVE))
-                                 m
+                                 (if key-transforms? m (dissoc m old-k))
                                  (assoc m new-k result))))
                            m)))
                      data)]

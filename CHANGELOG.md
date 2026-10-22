@@ -8,6 +8,14 @@
 - Honor transducer accumulator changes, early reduction and completion results, while preserving `find-when`'s
   vector-or-nil result contract on Clojure and ClojureScript.
 - Preserve the original sequential collection passed to predicates during traversal.
+- Traverse ClojureScript ranges, map sequences, map entries and records through collection-protocol fallbacks.
+- Use an identity-unique ClojureScript removal sentinel so advanced compilation cannot confuse ordinary keyword data
+  with `REMOVE`. Reject undersupplied raw replacement arrays instead of inserting undefined values.
+- Preserve ClojureScript record types during value-only updates.
+- Honor key matching for JVM struct maps. Preserve their basis unless an actual edit renames or removes a base key;
+  such edits now produce an ordinary map instead of ignoring keys or replacing removed values with nil.
+- Correct the documented `acc-set!` return value and specify traversal, replacement-length, collision and
+  reconstruction contracts.
 
 ### Changed
 
@@ -19,6 +27,8 @@
 ### Added
 
 - Regression coverage for traversal order, replacement cursors, metadata, collection boundaries, reentrancy and concurrency.
+- Shared collection-contract regressions, struct-map/XML coverage, and an advanced-compilation ClojureScript test task
+  included in `bb test`.
 - Reproducible JVM benchmarks with isolated workers, allocation measurements, deterministic fixtures and opt-in
   scaling, map and vector suites, including a pinned Clojure 1.13 comparison runtime.
 - Controlled postwalk and value-only tree-seq comparisons, including separate collection/replacement timing and
