@@ -48,8 +48,26 @@ measuring CLJS performance.
 The work began on 2026-09-15 following the correctness fixes in `74f0935`, with
 vector-update proposals added on 2026-10-09. Broader sequence reconstruction and
 extending native traversal to other scanners remain optional follow-up work.
-Apply the [implementation priorities](README.md#implementation-priorities)
-when evaluating them.
+
+## Correctness checks
+
+`bb test` runs the JVM tests, release workflow tests, and the ClojureScript browser suite in both development and
+advanced compilation modes.
+For individual checks, use `bb test:clj`, `bb test:cljs`, or `bb test:cljs:release`. `bb bench:check` additionally checks
+the benchmark fixtures and harness without running performance measurements.
+
+## Benchmarks
+
+Run `bb bench` to compile, check correctness, and save per-case JVM benchmark
+results. The default suite prioritizes raw `path-when` and `update-paths` usage.
+See [benchmark commands and output format](benchmarks/README.md) for focused runs,
+quick checks, and retaining baselines.
+
+## Implementation guide
+
+The [Java package documentation](src/co/multiply/pathling/package-info.java) maps the scanner families, explains
+the navigation/update boundary, and records the ownership and traversal contracts shared by the specialized
+implementations.
 
 ## Preparing and publishing a release
 

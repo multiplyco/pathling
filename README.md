@@ -73,7 +73,6 @@ back.
 Key properties:
 
 - **Targeted updates**: Build a navigation structure, then apply multiple updates efficiently as a separate step
-- **Bounded by nesting depth**: Stack usage follows structure depth, not match count; very deep inputs can overflow
 - **Allocation-friendly**: Navigation is retained only for matches and their ancestors; traversal and updates can also
   allocate
 - **Transducer support**: `find-when` accepts transducers for transformation, filtering, and early termination
@@ -182,6 +181,8 @@ its key; the key is tested as a whole rather than recursively traversed. Predica
 collections. Map and set order follows the input collection, so do not assume identical order across runtimes or
 collection implementations.
 
+Stack usage follows nesting depth, not match count; very deeply nested inputs can overflow the stack.
+
 ### `update-paths`
 
 Apply replacements to all locations identified by a navigation structure.
@@ -248,12 +249,7 @@ transformation, filtering, and early termination.
 ;=> ["a" "b"]
 ```
 
-The `pred` argument filters at scan time (in tight loops), while transducers process matches. You could achieve the
-equivalent effect with e.g. `(find-when data (constantly true) (filter pred))`. Filtering up-front, before engaging
-the transducer machinery, is ultimately faster for the case where you don't want to pipe the entire structure through
-the transducer (which ought to be most cases).
-
-If no transducer is given, a more efficient method of collecting matches is used.
+Use `pred` to select values during traversal; the transducer processes the matches.
 
 ### `transform-when`
 
@@ -358,58 +354,7 @@ can be renamed or removed without conversion. `find-when`, `path-when`, and `tra
 for struct maps. For example, changing a `clojure.xml` element's `:tag` value preserves its struct type; renaming or
 removing the `:tag` field converts it.
 
-## Correctness checks
-
-`bb test` runs the JVM tests, release workflow tests, and the ClojureScript browser suite in both development and
-advanced compilation modes.
-For individual checks, use `bb test:clj`, `bb test:cljs`, or `bb test:cljs:release`. `bb bench:check` additionally checks
-the benchmark fixtures and harness without running performance measurements.
-
-## Implementation priorities
-
-Pathling backs Quiescent, where library overhead should be small and predictable relative to application work.
-Correctness and performance take priority over code deduplication. Reducing allocation is a first-class objective:
-temporary garbage can impose GC work and latency elsewhere in the application, beyond the measured call.
-
-Prefer specialized traversal using each collection's existing representation and native access mechanisms. Avoid
-converting collections into a common representation merely to share an algorithm. Use general traversal as a fallback
-for other supported types; introduce conversion where semantics require it or measurements justify the tradeoff.
-The possibility that the JVM will optimize away generality is not, by itself, a reason to introduce it. Preserve
-collection identity and traversal semantics when specializing.
-
-Quiescent's main workload is finding a few matches in a potentially large structure. The design targets are:
-
-- A full scan must visit the structure, but work per nonmatch should be minimal.
-- Avoid temporary traversal objects for subtrees without matches, not just retained navigation for those subtrees.
-- Make allocation depend chiefly on matches and the navigation connecting them, sharing common ancestors where possible.
-- Follow recorded paths during updates, accounting for the cost of rebuilding affected collections.
-
-These are targets, not promises of constant overhead or allocation-free traversal. Collection shape, match depth,
-sequence realization, and rebuilding collections also affect cost. Stack usage follows nesting depth and is distinct
-from heap allocation that contributes to GC pressure.
-
-Evaluate execution time, allocated bytes per operation, and variability together. Neither the fastest isolated timing
-nor the lowest allocation count automatically wins; make tradeoffs using representative workloads, examining sustained
-GC effects when needed. Include large structures with zero or few matches to expose costs that grow with the haystack.
-
-Prioritize the JVM implementation and Quiescent's `(p/path-when v type/groundable? {:raw-matches true})` followed by
-`update-paths`. Other operations, including `transform-when`, matter but are less frequent. ClojureScript should retain
-API compatibility and pursue the same efficiency goals, with lower optimization priority than the JVM implementation.
-
-See [development notes](DEVELOPMENT.md) for completed optimization work, measured tradeoffs and follow-up directions.
-
-## Benchmarks
-
-Run `bb bench` to compile, check correctness, and save per-case JVM benchmark
-results. The default suite prioritizes raw `path-when` and `update-paths` usage.
-See [benchmark commands and output format](benchmarks/README.md) for focused runs,
-quick checks, and retaining baselines.
-
-## Implementation guide
-
-The [Java package documentation](src/co/multiply/pathling/package-info.java) maps the scanner families, explains
-the navigation/update boundary, and records the ownership and traversal contracts shared by the specialized
-implementations.
+See the [development notes](DEVELOPMENT.md) for testing, benchmarking, implementation details, and release instructions.
 
 ## License
 
